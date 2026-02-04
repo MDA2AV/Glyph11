@@ -7,10 +7,10 @@ public partial class Parser11
     /// <summary>
     /// Hot Path, single segment
     /// </summary>
-    public static bool TryExtractFullHeaderSingleSegment(ref ReadOnlyMemory<byte> inputROM, IBinaryRequest request, ref int position)
+    public static bool TryExtractFullHeaderSingleSegment(ref ReadOnlyMemory<byte> input, IBinaryRequest request, out int bytesReadCount)
     {
-        var slicedInputROM = position != 0 ? inputROM[position..] : inputROM;
-        var slicedInputSpan = slicedInputROM.Span;
+        bytesReadCount = -1;
+        var slicedInputSpan = input.Span;
 
         int headerEnd = slicedInputSpan.IndexOf(CrlfCrlf);
         if (headerEnd < 0) return false;
@@ -28,7 +28,7 @@ public partial class Parser11
 
         int secondSpaceIndex = firstSpaceIndex + 1 + secondSpaceRelativeIndex;
         
-        request.Method = slicedInputROM[..firstSpaceIndex];
+        request.Method = input[..firstSpaceIndex];
         
         int urlStart = firstSpaceIndex + 1;
         int urlLen = secondSpaceIndex - urlStart;
@@ -38,7 +38,7 @@ public partial class Parser11
         if (queryStartIndex >= 0)
         {
             // Route is path portion only
-            request.Route = slicedInputROM.Slice(urlStart, queryStartIndex);
+            request.Route = input.Slice(urlStart, queryStartIndex);
 
             // Query part after '?'
             int queryAbsStart = urlStart + queryStartIndex + 1;
@@ -59,8 +59,8 @@ public partial class Parser11
                 if (eq > 0)
                 {
                     request.QueryParameters.Add(
-                        slicedInputROM.Slice(pairAbsStart, eq),
-                        slicedInputROM.Slice(pairAbsStart + eq + 1, pairLen - (eq + 1)));
+                        input.Slice(pairAbsStart, eq),
+                        input.Slice(pairAbsStart + eq + 1, pairLen - (eq + 1)));
                 }
 
                 cur += pairLen + (amp < 0 ? 0 : 1);
@@ -68,7 +68,7 @@ public partial class Parser11
         }
         else
         {
-            request.Route = slicedInputROM.Slice(urlStart, urlLen);
+            request.Route = input.Slice(urlStart, urlLen);
         }
         
         int lineStart = requestLineEnd + 2;
@@ -98,14 +98,14 @@ public partial class Parser11
                 int valLen = (lineStart + lineLen) - valAbsStart;
 
                 request.Headers.Add(
-                    slicedInputROM.Slice(keyAbsStart, colon),
-                    slicedInputROM.Slice(valAbsStart, valLen));
+                    input.Slice(keyAbsStart, colon),
+                    input.Slice(valAbsStart, valLen));
             }
 
             lineStart += lineLen + 2;
         }
         
-        position += headerEnd + 4;
+        bytesReadCount += headerEnd + 4;
         return true;
     }
 }

@@ -9,8 +9,10 @@ namespace Glyph11.Parser;
 
 public partial class Parser11
 {
-    public static bool TryExtractFullHeaderMultiSegment(ref ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
+    public static bool TryExtractFullHeaderMultiSegment(ref ReadOnlySequence<byte> seq, IBinaryRequest request, out int bytesReadCount)
     {
+        bytesReadCount = -1;
+        
         if (!IsFullHeaderPresent(ref seq))
             return false;
 
@@ -38,7 +40,7 @@ public partial class Parser11
 
         // reader is now positioned right after the empty line CRLF,
         // meaning we've consumed exactly the full header (including CRLFCRLF).
-        position += checked((int)reader.Consumed);
+        bytesReadCount += checked((int)reader.Consumed);
         return true;
     }
 

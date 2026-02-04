@@ -5,23 +5,18 @@ namespace Glyph11.Parser;
 
 public partial class Parser11
 {
-    public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
+    public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> input, IBinaryRequest request, out int bytesReadCount)
     {
-        var sliced = position == 0 ? seq : seq.Slice(position);
-        
-        if (sliced.IsSingleSegment)
+        if (input.IsSingleSegment)
         {
-            ReadOnlyMemory<byte> mem = sliced.First;
-
-            // mem is already sliced to "position", so parse from localPos=0
-            int localPos = 0;
-            if (!TryExtractFullHeaderSingleSegment(ref mem, request, ref localPos))
+            ReadOnlyMemory<byte> mem = input.First;
+            
+            if (!TryExtractFullHeaderSingleSegment(ref mem, request, out bytesReadCount))
                 return false;
-
-            position += localPos;
+            
             return true;
         }
         
-        return TryExtractFullHeaderMultiSegment(ref sliced, request, ref position);
+        return TryExtractFullHeaderMultiSegment(ref input, request, out bytesReadCount);
     }
 }

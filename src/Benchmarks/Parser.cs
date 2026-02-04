@@ -39,17 +39,17 @@ public class Parser
     private readonly Request _into = new();
 
     private readonly ReadOnlySequence<byte> _buffer =
-        new("GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\nContent-Length: 100\r\nServer: GinHTTP\r\n\r\n"u8.ToArray());
+        new(("GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n"u8 +
+            "Content-Length: 100\r\n"u8 +
+            "Server: GinHTTP\r\n\r\n"u8).ToArray());
     
     private ReadOnlySequence<byte> _segmentedBuffer = CreateMultiSegment();
 
     private ReadOnlyMemory<byte> _memory;
-    private int _i;
 
     public Parser()
     {
         _memory = _buffer.ToArray();
-        _i = 0;
     }
     
     private static ReadOnlySequence<byte> CreateMultiSegment()
@@ -68,15 +68,13 @@ public class Parser
     public void BenchmarkSingleSegmentParser()
     {
         _into.Clear();
-        _i = 0; // IMPORTANT: reset position per-iteration
-        Parser11.TryExtractFullHeaderSingleSegment(ref _memory, _into.Binary, ref _i);
+        Parser11.TryExtractFullHeaderSingleSegment(ref _memory, _into.Binary, out var bytesReadCount);
     }
     
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {
         _into.Clear();
-        _i = 0; // IMPORTANT: reset position per-iteration
-        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Binary, ref _i);
+        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Binary, out var bytesReadCount);
     }
 }

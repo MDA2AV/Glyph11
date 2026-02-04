@@ -22,9 +22,8 @@ public class Parser11TryExtractFullHeader_ROM
         ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
 
         var data = new Request();
-        int position = 0;
 
-        var parsed = Parser11.TryExtractFullHeaderSingleSegment(ref rom, data.Binary, ref position);
+        var parsed = Parser11.TryExtractFullHeaderSingleSegment(ref rom, data.Binary, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -41,7 +40,7 @@ public class Parser11TryExtractFullHeader_ROM
         var data = new Request();
         int position = 0;
 
-        var parsed = Parser11.TryExtractFullHeaderMultiSegment(ref segmented, data.Binary, ref position);
+        var parsed = Parser11.TryExtractFullHeaderMultiSegment(ref segmented, data.Binary, out var bytesAdvancedCount);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -91,7 +90,7 @@ public class Parser11TryExtractFullHeader_ROM
             }
         }
 
-        Assert.True(false, $"Missing key '{expectedKey}'");
+        Assert.Fail($"Missing key '{expectedKey}'");
     }
 
     private static bool AsciiEquals(ReadOnlySpan<byte> bytes, string ascii)
@@ -125,81 +124,3 @@ static class AssertAscii
     public static void Equal(string expectedAscii, ReadOnlySpan<byte> actual)
         => Assert.Equal(expectedAscii, Encoding.ASCII.GetString(actual));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    [Fact]
-    public void ParseSingleSegmentRequest()
-    {
-        var request =
-            "GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n" +
-            "Content-Length: 100\r\n" +
-            "Server: GinHTTP\r\n" +
-            "\r\n";
-
-        ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
-
-        var data = new Request();
-
-        int position = 0;
-
-        var parsed = Parser11.TryExtractFullHeaderSingleSegment(ref rom, data.Binary, ref position);
-
-        Assert.True(parsed);
-    }
-
-    [Fact]
-    public void ParseMultiSegmentRequest()
-    {
-        ReadOnlySequence<byte> _segmentedBuffer = CreateMultiSegment();
-
-        var data = new Request();
-
-        int position = 0;
-
-        var parsed = Parser11.TryExtractFullHeaderMultiSegment(ref _segmentedBuffer, data.Binary, ref position);
-
-        Console.WriteLine($"Method: {Encoding.UTF8.GetString(data.Binary.Method.ToArray())}");
-        Console.WriteLine($"Route: {Encoding.UTF8.GetString(data.Binary.Route.ToArray())}");
-
-        Assert.True(parsed);
-    }
-
-    private static ReadOnlySequence<byte> CreateMultiSegment()
-    {
-        var seg1 = "GET /route?p1=1&p2=2&p3=3&p4=4 HT"u8.ToArray();
-        var seg2 = "TP/1.1\r\nContent-Length: 100\r\nServer: "u8.ToArray();
-        var seg3 = "GinHTTP\r\n\r\n"u8.ToArray();
-
-        var first = new Glyph11.Utils.BufferSegment(seg1);
-        var last  = first.Append(seg2)
-            .Append(seg3);
-
-        return new ReadOnlySequence<byte>(
-            first, 0,
-            last,  last.Memory.Length);
-    }
-    */
