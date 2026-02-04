@@ -68,7 +68,7 @@ public class Parser
     public void BenchmarkSingleSegmentParser()
     {
         _into.Clear();
-        Parser11.TryExtractFullHeaderSingleSegment(ref _memory, _into.Binary, out var bytesReadCount);
+        Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Binary, out var bytesReadCount);
     }
     
     [Benchmark]

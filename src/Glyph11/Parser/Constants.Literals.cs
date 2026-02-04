@@ -1,8 +1,11 @@
 // ReSharper disable SuggestVarOrType_BuiltInTypes
 
+using System.Runtime.CompilerServices;
+
 namespace Glyph11.Parser;
 
-public partial class Parser11
+[SkipLocalsInit]
+public static partial class Parser11
 {
     // ---- Constants & literals ----
     private static ReadOnlySpan<byte> Crlf => "\r\n"u8;

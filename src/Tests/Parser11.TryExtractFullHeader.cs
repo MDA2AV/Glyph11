@@ -23,7 +23,7 @@ public class Parser11TryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = Parser11.TryExtractFullHeaderSingleSegment(ref rom, data.Binary, out var position);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlyMemory(ref rom, data.Binary, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -40,7 +40,7 @@ public class Parser11TryExtractFullHeader_ROM
         var data = new Request();
         int position = 0;
 
-        var parsed = Parser11.TryExtractFullHeaderMultiSegment(ref segmented, data.Binary, out var bytesAdvancedCount);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var bytesAdvancedCount);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);

@@ -5,11 +5,12 @@ using Glyph11.Protocol;
 
 namespace Glyph11.Parser;
 
-// TODO For this case we need to implement phased reading with status line and headers, this can help a lot performance
-
-public partial class Parser11
+public static partial class Parser11
 {
-    public static bool TryExtractFullHeaderMultiSegment(ref ReadOnlySequence<byte> seq, IBinaryRequest request, out int bytesReadCount)
+    [Pure]
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryExtractFullHeaderReadOnlySequence(ref ReadOnlySequence<byte> seq, IBinaryRequest request, out int bytesReadCount)
     {
         bytesReadCount = -1;
         
@@ -44,6 +45,9 @@ public partial class Parser11
         return true;
     }
 
+    [Pure]
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryParseStatusLine(in ReadOnlySequence<byte> statusLineSequence, IBinaryRequest request)
     {
         var r = new SequenceReader<byte>(statusLineSequence);
@@ -79,7 +83,9 @@ public partial class Parser11
         ParseQueryParams(querySeq, request);
         return true;
     }
-
+    
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ParseQueryParams(in ReadOnlySequence<byte> querySeq, IBinaryRequest request)
     {
         // Split by '&', then key/value by '=' (same behavior as your single segment)
@@ -117,7 +123,9 @@ public partial class Parser11
                 valSeq.ToArray());
         }
     }
-
+    
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void TryParseHeaderLine(in ReadOnlySequence<byte> lineSeq, IBinaryRequest request)
     {
         // Find ':'
@@ -140,7 +148,10 @@ public partial class Parser11
             keySeq.ToArray(),
             valueSeq.ToArray());
     }
-
+    
+    [Pure]
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySequence<byte> TrimStartSpacesAndTabs(ReadOnlySequence<byte> seq)
     {
         var r = new SequenceReader<byte>(seq);
@@ -160,6 +171,7 @@ public partial class Parser11
     }
 
     [Pure]
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsFullHeaderPresent(ref ReadOnlySequence<byte> seq)
     {

@@ -2,12 +2,12 @@ using Glyph11.Protocol;
 
 namespace Glyph11.Parser;
 
-public partial class Parser11
+public static partial class Parser11
 {
     /// <summary>
     /// Hot Path, single segment
     /// </summary>
-    public static bool TryExtractFullHeaderSingleSegment(ref ReadOnlyMemory<byte> input, IBinaryRequest request, out int bytesReadCount)
+    public static bool TryExtractFullHeaderReadOnlyMemory(ref ReadOnlyMemory<byte> input, IBinaryRequest request, out int bytesReadCount)
     {
         bytesReadCount = -1;
         var slicedInputSpan = input.Span;

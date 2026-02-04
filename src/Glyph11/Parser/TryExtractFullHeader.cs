@@ -3,20 +3,20 @@ using Glyph11.Protocol;
 
 namespace Glyph11.Parser;
 
-public partial class Parser11
+public static partial class Parser11
 {
+    /// <summary>
+    /// Tries to extract a full header(status line plus headers), will not yield any progress unless full header is present.
+    /// </summary>
     public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> input, IBinaryRequest request, out int bytesReadCount)
     {
         if (input.IsSingleSegment)
         {
-            ReadOnlyMemory<byte> mem = input.First;
+            ReadOnlyMemory<byte> singleMemorySegment = input.First;
             
-            if (!TryExtractFullHeaderSingleSegment(ref mem, request, out bytesReadCount))
-                return false;
-            
-            return true;
+            return TryExtractFullHeaderReadOnlyMemory(ref singleMemorySegment, request, out bytesReadCount);
         }
         
-        return TryExtractFullHeaderMultiSegment(ref input, request, out bytesReadCount);
+        return TryExtractFullHeaderReadOnlySequence(ref input, request, out bytesReadCount);
     }
 }
