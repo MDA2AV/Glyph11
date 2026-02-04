@@ -4,6 +4,8 @@ namespace Glyph11;
 
 public class Request11BinaryData
 {
+    public ReadOnlyMemory<byte> Version;
+    
     public ReadOnlyMemory<byte> HttpMethod;
     
     public ReadOnlyMemory<byte> Route;
