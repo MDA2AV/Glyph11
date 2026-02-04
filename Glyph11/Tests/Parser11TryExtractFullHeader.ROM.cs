@@ -19,11 +19,11 @@ public class Parser11TryExtractFullHeader_ROM
 
         ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
 
-        var data = new RawRequest();
+        var data = new Request();
 
         int position = 0;
         
-        var parsed = parser.TryExtractFullHeader(ref rom, data, ref position);
+        var parsed = Parser11.TryExtractFullHeader(ref rom, data, ref position);
         
         Assert.True(parsed);
     }

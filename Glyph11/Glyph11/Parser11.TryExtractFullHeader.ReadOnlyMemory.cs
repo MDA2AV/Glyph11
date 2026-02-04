@@ -5,8 +5,7 @@ namespace Glyph11;
 public partial class Parser11
 {
     
-    public bool TryExtractFullHeader(
-        ref ReadOnlyMemory<byte> inputROM, IRawRequest request11Binary, ref int position)
+    public static bool TryExtractFullHeader(ref ReadOnlyMemory<byte> inputROM, IRequest request, ref int position)
     {
         var slicedInputROM = position != 0 ? inputROM[position..] : inputROM;
         var slicedInputSpan = slicedInputROM.Span;
@@ -27,7 +26,7 @@ public partial class Parser11
 
         int secondSpaceIndex = firstSpaceIndex + 1 + secondSpaceRelativeIndex;
         
-        request11Binary.Method = slicedInputROM[..firstSpaceIndex];
+        request.Raw.Method = slicedInputROM[..firstSpaceIndex];
         
         int urlStart = firstSpaceIndex + 1;
         int urlLen = secondSpaceIndex - urlStart;
@@ -37,7 +36,7 @@ public partial class Parser11
         if (queryStartIndex >= 0)
         {
             // Route is path portion only
-            request11Binary.Route = slicedInputROM.Slice(urlStart, queryStartIndex);
+            request.Raw.Route = slicedInputROM.Slice(urlStart, queryStartIndex);
 
             // Query part after '?'
             int queryAbsStart = urlStart + queryStartIndex + 1;
@@ -57,7 +56,7 @@ public partial class Parser11
 
                 if (eq > 0)
                 {
-                    request11Binary.QueryParameters.Add(
+                    request.Raw.QueryParameters.Add(
                         slicedInputROM.Slice(pairAbsStart, eq),
                         slicedInputROM.Slice(pairAbsStart + eq + 1, pairLen - (eq + 1)));
                 }
@@ -67,7 +66,7 @@ public partial class Parser11
         }
         else
         {
-            request11Binary.Route = slicedInputROM.Slice(urlStart, urlLen);
+            request.Raw.Route = slicedInputROM.Slice(urlStart, urlLen);
         }
         
         int lineStart = requestLineEnd + 2;
@@ -96,7 +95,7 @@ public partial class Parser11
 
                 int valLen = (lineStart + lineLen) - valAbsStart;
 
-                request11Binary.Headers.Add(
+                request.Raw.Headers.Add(
                     slicedInputROM.Slice(keyAbsStart, colon),
                     slicedInputROM.Slice(valAbsStart, valLen));
             }
