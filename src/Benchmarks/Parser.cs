@@ -1,5 +1,10 @@
 using System.Buffers;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Columns;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
 using GinHTTP.Protocol;
 using Parser11 = Glyph11.Parser.Parser11;
@@ -8,9 +13,23 @@ namespace Benchmarks;
 
 public static class Program
 {
+    public sealed class FastConfig : ManualConfig
+    {
+        public FastConfig()
+        {
+            AddJob(Job.Default
+                .WithMinIterationCount(5)
+                .WithMaxIterationCount(15));
+
+            // optional but useful (removes your other warnings)
+            AddLogger(ConsoleLogger.Default);
+            AddExporter(MarkdownExporter.Default);
+            AddColumnProvider(DefaultColumnProviders.Instance);
+        }
+    }
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run<Parser>();
+        BenchmarkRunner.Run<Parser>(new FastConfig());
     }
 }
 
@@ -20,7 +39,9 @@ public class Parser
     private readonly Request _into = new();
 
     private readonly ReadOnlySequence<byte> _buffer =
-        new("GET / HTTP/1.1\r\nHost: test\r\n\r\n"u8.ToArray());
+        new("GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\nContent-Length: 100\r\nServer: GinHTTP\r\n\r\n"u8.ToArray());
+    
+    private ReadOnlySequence<byte> _segmentedBuffer = CreateMultiSegment();
 
     private ReadOnlyMemory<byte> _memory;
     private int _i;
@@ -30,11 +51,32 @@ public class Parser
         _memory = _buffer.ToArray();
         _i = 0;
     }
+    
+    private static ReadOnlySequence<byte> CreateMultiSegment()
+    {
+        var seg1 = "GET /route?p1=1&p2=2&p3=3&p4=4 HT"u8.ToArray();
+        var seg2 = "TP/1.1\r\nContent-Length: 100\r\nServer: "u8.ToArray();
+        var seg3 = "GinHTTP\r\n\r\n"u8.ToArray();
+
+        var first = new Glyph11.Utils.BufferSegment(seg1);
+        var last = first.Append(seg2).Append(seg3);
+
+        return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
+    }
 
     [Benchmark]
-    public void BenchmarkParser()
+    public void BenchmarkSingleSegmentParser()
     {
+        _into.Clear();
         _i = 0; // IMPORTANT: reset position per-iteration
         Parser11.TryExtractFullHeaderSingleSegment(ref _memory, _into.Binary, ref _i);
+    }
+    
+    [Benchmark]
+    public void BenchmarkMultiSegmentParser()
+    {
+        _into.Clear();
+        _i = 0; // IMPORTANT: reset position per-iteration
+        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Binary, ref _i);
     }
 }

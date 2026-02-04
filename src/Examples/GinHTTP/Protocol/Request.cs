@@ -40,6 +40,7 @@ public class Request : IRequest
     
     public void Clear()
     {
+        _method = null;
         Binary.QueryParameters.Clear();
         Binary.Headers.Clear();
     }

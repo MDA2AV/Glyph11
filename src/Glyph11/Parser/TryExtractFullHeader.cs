@@ -5,7 +5,7 @@ namespace Glyph11.Parser;
 
 public partial class Parser11
 {
-    public static bool TryExtractFullHeader(ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
+    public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
     {
         var sliced = position == 0 ? seq : seq.Slice(position);
         
@@ -22,6 +22,6 @@ public partial class Parser11
             return true;
         }
         
-        return TryExtractFullHeaderMultiSegment(sliced, request, ref position);
+        return TryExtractFullHeaderMultiSegment(ref sliced, request, ref position);
     }
 }

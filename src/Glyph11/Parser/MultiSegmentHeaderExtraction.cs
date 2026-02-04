@@ -1,47 +1,167 @@
 using System.Buffers;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Glyph11.Protocol;
 
 namespace Glyph11.Parser;
 
+// TODO For this case we need to implement phased reading with status line and headers, this can help a lot performance
+
 public partial class Parser11
 {
-    public static bool TryExtractFullHeaderMultiSegment(ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
+    public static bool TryExtractFullHeaderMultiSegment(ref ReadOnlySequence<byte> seq, IBinaryRequest request, ref int position)
     {
-        var sequenceReader = new SequenceReader<byte>(seq);
-
-        if (!sequenceReader.TryReadTo(out ReadOnlySequence<byte> method, Parser11.Space))
+        if (!IsFullHeaderPresent(ref seq))
             return false;
 
-        request.Method = method.ToArray();
-        
-        if (!sequenceReader.TryReadTo(out ReadOnlySequence<byte> urlSequence, (byte)' '))
+        var reader = new SequenceReader<byte>(seq);
+
+        // ---- Status line: <METHOD> <URL> <VERSION>\r\n
+        if (!reader.TryReadTo(out ReadOnlySequence<byte> statusLine, Crlf, advancePastDelimiter: true))
             return false;
-        
-        
+
+        if (!TryParseStatusLine(statusLine, request))
+            throw new InvalidOperationException("Invalid HTTP/1.1 request line.");
+
+        // ---- Headers: lines until \r\n
+        while (true)
+        {
+            if (!reader.TryReadTo(out ReadOnlySequence<byte> headerLine, Crlf, advancePastDelimiter: true))
+                throw new InvalidOperationException("Invalid headers.");
+
+            // empty line => end of headers
+            if (headerLine.Length == 0)
+                break;
+
+            TryParseHeaderLine(headerLine, request);
+        }
+
+        // reader is now positioned right after the empty line CRLF,
+        // meaning we've consumed exactly the full header (including CRLFCRLF).
+        position += checked((int)reader.Consumed);
         return true;
     }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SkipLocalsInit]
-    private static void ParseUrl(in ReadOnlySequence<byte> urlSequence, IBinaryRequest request)
+
+    private static bool TryParseStatusLine(in ReadOnlySequence<byte> statusLineSequence, IBinaryRequest request)
     {
-        /*var urlSpan = urlSequence.ToSpan();
-        var queryStart = urlSpan.IndexOf((byte)'?');
+        var r = new SequenceReader<byte>(statusLineSequence);
 
-        if (queryStart != -1)
+        // METHOD
+        if (!r.TryReadTo(out ReadOnlySequence<byte> methodSeq, Space, advancePastDelimiter: true))
+            return false;
+
+        // URL (path[?query])
+        if (!r.TryReadTo(out ReadOnlySequence<byte> urlSeq, Space, advancePastDelimiter: true))
+            return false;
+
+        // VERSION (we don't really need it for header parsing; just validate it's present)
+        if (r.Remaining == 0)
+            return false;
+
+        request.Method = methodSeq.ToArray();
+
+        // Split URL into route + query
+        SequencePosition? qPos = urlSeq.PositionOf(Question); // '?'
+        if (qPos is null)
         {
-            // URL has query parameters
-            var routeSpan = urlSpan[..queryStart];
-            request.Route = CachedData.CachedRoutes.GetOrAdd(routeSpan);
-
-            // Parse query parameters
-            ParseQueryParameters(urlSpan[(queryStart + 1)..], request);
+            request.Route = urlSeq.ToArray();
+            return true;
         }
-        else
+
+        var routeSeq = urlSeq.Slice(0, qPos.Value);
+        request.Route = routeSeq.ToArray();
+
+        // Query begins AFTER '?'
+        var querySeq = urlSeq.Slice(urlSeq.GetPosition(1, qPos.Value));
+
+        ParseQueryParams(querySeq, request);
+        return true;
+    }
+
+    private static void ParseQueryParams(in ReadOnlySequence<byte> querySeq, IBinaryRequest request)
+    {
+        // Split by '&', then key/value by '=' (same behavior as your single segment)
+        var qReader = new SequenceReader<byte>(querySeq);
+
+        while (qReader.Remaining > 0)
         {
-            // Simple URL without query parameters  
-            request.Route = CachedData.CachedRoutes.GetOrAdd(urlSpan);
-        }*/
+            // read one pair (until '&' or end)
+            if (!qReader.TryReadTo(out ReadOnlySequence<byte> pairSeq, QuerySeparator, advancePastDelimiter: true))
+            {
+                // last pair = rest
+                pairSeq = qReader.Sequence.Slice(qReader.Position, qReader.Sequence.End);
+                qReader.Advance(pairSeq.Length);
+            }
+
+            if (pairSeq.Length == 0)
+                continue;
+
+            var eqPos = pairSeq.PositionOf(Equal); // '='
+            if (eqPos is null)
+                continue;
+
+            // key = [0..eq), val = (eq+1..end)
+            var keySeq = pairSeq.Slice(0, eqPos.Value);
+
+            // If '=' is last char => empty value; your single-seg skips eq>0 only,
+            // so we match that spirit: require non-empty key.
+            if (keySeq.Length == 0)
+                continue;
+
+            var valSeq = pairSeq.Slice(pairSeq.GetPosition(1, eqPos.Value));
+
+            request.QueryParameters.Add(
+                keySeq.ToArray(),
+                valSeq.ToArray());
+        }
+    }
+
+    private static void TryParseHeaderLine(in ReadOnlySequence<byte> lineSeq, IBinaryRequest request)
+    {
+        // Find ':'
+        var colonPos = lineSeq.PositionOf(Colon);
+        if (colonPos is null)
+            return;
+
+        var keySeq = lineSeq.Slice(0, colonPos.Value);
+
+        // value starts after ':'
+        var valueSeq = lineSeq.Slice(lineSeq.GetPosition(1, colonPos.Value));
+
+        // Trim leading SP/HTAB in the value
+        valueSeq = TrimStartSpacesAndTabs(valueSeq);
+
+        if (keySeq.Length == 0)
+            return;
+
+        request.Headers.Add(
+            keySeq.ToArray(),
+            valueSeq.ToArray());
+    }
+
+    private static ReadOnlySequence<byte> TrimStartSpacesAndTabs(ReadOnlySequence<byte> seq)
+    {
+        var r = new SequenceReader<byte>(seq);
+
+        while (r.Remaining > 0)
+        {
+            if (!r.TryPeek(out byte b))
+                break;
+
+            if (b != (byte)' ' && b != (byte)'\t')
+                break;
+
+            r.Advance(1);
+        }
+
+        return seq.Slice(r.Position);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsFullHeaderPresent(ref ReadOnlySequence<byte> seq)
+    {
+        var sequenceReader = new SequenceReader<byte>(seq);
+        return sequenceReader.TryReadTo(out ReadOnlySequence<byte> _, CrlfCrlf, advancePastDelimiter: true);
     }
 }
