@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\GinHTTP\GinHTTP.csproj" />
       <ProjectReference Include="..\Glyph11\Glyph11.csproj" />
     </ItemGroup>
 

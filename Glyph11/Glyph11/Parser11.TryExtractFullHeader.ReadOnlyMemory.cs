@@ -1,10 +1,12 @@
+using Glyph11.Protocol;
+
 namespace Glyph11;
 
 public partial class Parser11
 {
     
     public bool TryExtractFullHeader(
-        ref ReadOnlyMemory<byte> inputROM, ref Request11BinaryData request11Binary, ref int position)
+        ref ReadOnlyMemory<byte> inputROM, IRawRequest request11Binary, ref int position)
     {
         var slicedInputROM = position != 0 ? inputROM[position..] : inputROM;
         var slicedInputSpan = slicedInputROM.Span;
@@ -25,7 +27,7 @@ public partial class Parser11
 
         int secondSpaceIndex = firstSpaceIndex + 1 + secondSpaceRelativeIndex;
         
-        request11Binary.HttpMethod = slicedInputROM[..firstSpaceIndex];
+        request11Binary.Method = slicedInputROM[..firstSpaceIndex];
         
         int urlStart = firstSpaceIndex + 1;
         int urlLen = secondSpaceIndex - urlStart;

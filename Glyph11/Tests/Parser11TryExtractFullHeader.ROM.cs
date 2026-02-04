@@ -1,6 +1,6 @@
 using System.Text;
+using GinHTTP.Protocol;
 using Glyph11;
-using Glyph11.Utils;
 
 namespace Tests;
 
@@ -14,18 +14,16 @@ public class Parser11TryExtractFullHeader_ROM
         var request =
             "GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n" +
             "Content-Length: 100\r\n" +
-            "Server: Nigero\r\n" +
+            "Server: GinHTTP\r\n" +
             "\r\n";
 
         ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
 
-        var data = new Request11BinaryData();
-        data.QueryParameters = new PooledKeyValueList();
-        data.Headers = new PooledKeyValueList();
+        var data = new RawRequest();
 
         int position = 0;
         
-        var parsed = parser.TryExtractFullHeader(ref rom, ref data, ref position);
+        var parsed = parser.TryExtractFullHeader(ref rom, data, ref position);
         
         Assert.True(parsed);
     }
