@@ -2,15 +2,21 @@ using Glyph11.Utils;
 
 namespace Glyph11;
 
-public struct Request11BinaryData
+public class Request11BinaryData
 {
     public ReadOnlyMemory<byte> HttpMethod;
     
     public ReadOnlyMemory<byte> Route;
+
+    public PooledKeyValueList QueryParameters = null!;
     
-    public PooledKeyValueList QueryParameters;
-    
-    public PooledKeyValueList Headers;
+    public PooledKeyValueList Headers = null!;
 
     public ReadOnlyMemory<byte> Body;
+
+    public void Clear()
+    {
+        QueryParameters.Clear();
+        Headers.Clear();
+    }
 }

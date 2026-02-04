@@ -61,7 +61,6 @@ public sealed class PooledKeyValueList : IKeyValueList, IDisposable
 
     public void Clear()
     {
-        // Important: clear references so buffers/owners can be GC’d
         Array.Clear(_items, 0, _count);
         _count = 0;
     }
