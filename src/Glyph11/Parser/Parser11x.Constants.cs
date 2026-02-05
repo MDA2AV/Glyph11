@@ -22,6 +22,41 @@ public static partial class Parser11x
     // ---- HTTP version prefix ----
     private static ReadOnlySpan<byte> HttpSlash => "HTTP/"u8;
 
+    // ---- Cached common HTTP versions (avoids ToArray alloc in ROS path) ----
+    private static readonly ReadOnlyMemory<byte> CachedHttp11 = "HTTP/1.1"u8.ToArray();
+    private static readonly ReadOnlyMemory<byte> CachedHttp10 = "HTTP/1.0"u8.ToArray();
+
+    /// <summary>
+    /// Returns a cached ReadOnlyMemory for HTTP/1.1 and HTTP/1.0, avoiding allocation.
+    /// Version must already be validated via IsValidHttpVersionSequence.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ReadOnlyMemory<byte> ResolveCachedVersion(in ReadOnlySequence<byte> seq)
+    {
+        byte major, minor;
+        if (seq.IsSingleSegment)
+        {
+            var span = seq.FirstSpan;
+            major = span[5];
+            minor = span[7];
+        }
+        else
+        {
+            Span<byte> buf = stackalloc byte[8];
+            seq.CopyTo(buf);
+            major = buf[5];
+            minor = buf[7];
+        }
+
+        if (major == (byte)'1')
+        {
+            if (minor == (byte)'1') return CachedHttp11;
+            if (minor == (byte)'0') return CachedHttp10;
+        }
+
+        return seq.ToArray();
+    }
+
     // ---- Token / field-value classification ----
     //
     // Bit 0 (0x01) = token        (RFC 9110 §5.6.2): !#$%&'*+-.^_`|~ DIGIT ALPHA
@@ -99,13 +134,15 @@ public static partial class Parser11x
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsValidHttpVersion(ReadOnlySpan<byte> span)
     {
-        if (span.Length != 8)
-            return false;
-        if (!span[..5].SequenceEqual(HttpSlash))
-            return false;
-        if (!IsDigit(span[5]) || span[6] != (byte)'.' || !IsDigit(span[7]))
-            return false;
-        return true;
+        return span.Length == 8
+            && span[0] == (byte)'H'
+            && span[1] == (byte)'T'
+            && span[2] == (byte)'T'
+            && span[3] == (byte)'P'
+            && span[4] == (byte)'/'
+            && IsDigit(span[5])
+            && span[6] == (byte)'.'
+            && IsDigit(span[7]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
