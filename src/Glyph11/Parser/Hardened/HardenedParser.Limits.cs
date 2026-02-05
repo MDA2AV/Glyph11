@@ -1,4 +1,4 @@
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.Hardened;
 
 /// <summary>
 /// Resource limits for the security-hardened HTTP/1.1 parser.

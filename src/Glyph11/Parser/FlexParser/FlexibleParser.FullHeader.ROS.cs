@@ -3,12 +3,12 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.FlexParser;
 
 /// <summary>
 /// 
 /// </summary>
-public static partial class Parser11
+public static partial class FlexibleParser
 {
     /// <summary>
     /// 

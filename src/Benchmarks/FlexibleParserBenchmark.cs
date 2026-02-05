@@ -7,7 +7,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
 using GenHTTP.Engine.Draft.Types;
-using Parser11 = Glyph11.Parser.Parser11;
+using Glyph11.Parser.FlexParser;
 
 namespace Benchmarks;
 
@@ -29,12 +29,12 @@ public static class Program
     }
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run([ typeof(Parser), typeof(ParserX) ], new FastConfig());
+        BenchmarkRunner.Run([ typeof(FlexibleParserBenchmark), typeof(HardenedParserBenchmark), typeof(ZParserBenchmark) ], new FastConfig());
     }
 }
 
 [MemoryDiagnoser]
-public class Parser
+public class FlexibleParserBenchmark
 {
     private readonly Request _into = new();
 
@@ -47,7 +47,7 @@ public class Parser
 
     private ReadOnlyMemory<byte> _memory;
 
-    public Parser()
+    public FlexibleParserBenchmark()
     {
         _memory = _buffer.ToArray();
     }
@@ -68,14 +68,14 @@ public class Parser
     public void BenchmarkSingleSegmentParser()
     {
         _into.Reset();
-        Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Source, out var bytesReadCount);
+        FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Source, out var bytesReadCount);
     }
 
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {
         _into.Reset();
-        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out var bytesReadCount);
+        FlexibleParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out var bytesReadCount);
     }
 
 }

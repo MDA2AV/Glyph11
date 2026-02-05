@@ -4,12 +4,12 @@ using System.Text;
 using GenHTTP.Api.Draft.Protocol;
 
 using GenHTTP.Engine.Draft.Types;
+using Glyph11.Parser.FlexParser;
 using Glyph11.Protocol;
-using Parser11 = Glyph11.Parser.Parser11;
 
 namespace Tests;
 
-public class Parser11TryExtractFullHeader_ROM
+public class FlexibleParserTryExtractFullHeader_ROM
 {
     private const string ExpectedPath = "/route";
 
@@ -26,7 +26,7 @@ public class Parser11TryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlyMemory(ref rom, data.Source, out var position);
+        var parsed = FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref rom, data.Source, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -42,7 +42,7 @@ public class Parser11TryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Source, out var position);
+        var parsed = FlexibleParser.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Source, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
