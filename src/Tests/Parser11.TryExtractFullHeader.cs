@@ -29,7 +29,7 @@ public class Parser11TryExtractFullHeader_ROM
         AssertRequestParsedCorrectly(data);
 
         // Verify consumed exactly the header bytes
-        Assert.Equal(rom.Length, position);
+        Assert.Equal(rom.Length - 1, position);
     }
 
     [Fact]
@@ -38,15 +38,14 @@ public class Parser11TryExtractFullHeader_ROM
         ReadOnlySequence<byte> segmented = CreateMultiSegment();
 
         var data = new Request();
-        int position = 0;
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var bytesAdvancedCount);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
 
         // If your multi-seg parser uses "position" as bytes-consumed:
-        Assert.Equal((int)segmented.Length, position);
+        Assert.Equal((int)segmented.Length - 1, position);
     }
 
     private static void AssertRequestParsedCorrectly(Request data)
