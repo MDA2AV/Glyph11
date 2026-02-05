@@ -6,13 +6,13 @@ namespace Glyph11.Parser.Hardened;
 public static partial class HardenedParser
 {
     /// <summary>
-    /// Security-hardened entry point. Dispatches to ROM or ROS path based on segment layout.
+    /// Security-hardened entry point.
+    /// Single-segment input uses zero-copy ROM path. Multi-segment input is linearized to a contiguous array first.
     /// Returns false if incomplete; throws InvalidOperationException if structurally invalid.
     /// </summary>
     public static bool TryExtractFullHeader(
         ref ReadOnlySequence<byte> input, BinaryRequest request,
-        in ParserLimits limits, out int bytesReadCount,
-        bool linearize = false)
+        in ParserLimits limits, out int bytesReadCount)
     {
         if (input.IsSingleSegment)
         {
@@ -20,18 +20,14 @@ public static partial class HardenedParser
             return TryExtractFullHeaderROM(ref singleMemorySegment, request, in limits, out bytesReadCount);
         }
 
-        if (linearize)
+        var reader = new SequenceReader<byte>(input);
+        if (!reader.TryReadTo(out ReadOnlySequence<byte> _, CrlfCrlf, advancePastDelimiter: true))
         {
-            if (!IsFullHeaderPresent(ref input))
-            {
-                bytesReadCount = -1;
-                return false;
-            }
-
-            ReadOnlyMemory<byte> mem = input.ToArray();
-            return TryExtractFullHeaderROM(ref mem, request, in limits, out bytesReadCount);
+            bytesReadCount = -1;
+            return false;
         }
 
-        return TryExtractFullHeaderROS(ref input, request, in limits, out bytesReadCount);
+        ReadOnlyMemory<byte> mem = input.ToArray();
+        return TryExtractFullHeaderROM(ref mem, request, in limits, out bytesReadCount);
     }
 }

@@ -75,7 +75,6 @@ public class FlexibleParserBenchmark
         _rom16K = _header16K;
         _rom32K = _header32K;
 
-        // 4KB segments — typical pipe buffer chunk
         _seg1K = BenchmarkData.ToThreeSegments(_header1K);
         _seg4K = BenchmarkData.ToThreeSegments(_header4K);
         _seg16K = BenchmarkData.ToThreeSegments(_header16K);
@@ -94,7 +93,7 @@ public class FlexibleParserBenchmark
         return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
     }
 
-    // ---- Small: ROM / ROS / Linearized ----
+    // ---- Small: ROM / MultiSegment ----
 
     [Benchmark]
     public void Small_ROM()
@@ -104,17 +103,10 @@ public class FlexibleParserBenchmark
     }
 
     [Benchmark]
-    public void Small_ROS()
+    public void Small_MultiSegment()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Small_Linearized()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out _, linearize: true);
     }
 
     // ---- 1KB ----
@@ -127,17 +119,10 @@ public class FlexibleParserBenchmark
     }
 
     [Benchmark]
-    public void Header1K_ROS()
+    public void Header1K_MultiSegment()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeader(ref _seg1K, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Header1K_Linearized()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg1K, _into.Source, out _, linearize: true);
     }
 
     // ---- 4KB ----
@@ -150,17 +135,10 @@ public class FlexibleParserBenchmark
     }
 
     [Benchmark]
-    public void Header4K_ROS()
+    public void Header4K_MultiSegment()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeader(ref _seg4K, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Header4K_Linearized()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg4K, _into.Source, out _, linearize: true);
     }
 
     // ---- 16KB ----
@@ -173,17 +151,10 @@ public class FlexibleParserBenchmark
     }
 
     [Benchmark]
-    public void Header16K_ROS()
+    public void Header16K_MultiSegment()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeader(ref _seg16K, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Header16K_Linearized()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg16K, _into.Source, out _, linearize: true);
     }
 
     // ---- 32KB ----
@@ -196,16 +167,9 @@ public class FlexibleParserBenchmark
     }
 
     [Benchmark]
-    public void Header32K_ROS()
+    public void Header32K_MultiSegment()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeader(ref _seg32K, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Header32K_Linearized()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg32K, _into.Source, out _, linearize: true);
     }
 }

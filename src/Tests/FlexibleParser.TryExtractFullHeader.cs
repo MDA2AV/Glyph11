@@ -42,12 +42,11 @@ public class FlexibleParserTryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = FlexibleParser.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Source, out var position);
+        var parsed = FlexibleParser.TryExtractFullHeader(ref segmented, data.Source, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
 
-        // If your multi-seg parser uses "position" as bytes-consumed:
         Assert.Equal((int)segmented.Length - 1, position);
     }
 

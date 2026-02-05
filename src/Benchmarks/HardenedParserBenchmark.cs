@@ -68,7 +68,7 @@ public class HardenedParserBenchmark
         return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
     }
 
-    // ---- Small: ROM / ROS / Linearized ----
+    // ---- Small: ROM / MultiSegment ----
 
     [Benchmark]
     public void Small_ROM()
@@ -78,17 +78,10 @@ public class HardenedParserBenchmark
     }
 
     [Benchmark]
-    public void Small_ROS()
+    public void Small_MultiSegment()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, in Limits, out _);
-    }
-
-    [Benchmark]
-    public void Small_Linearized()
-    {
-        _into.Reset();
-        HardenedParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, in Limits, out _, linearize: true);
     }
 
     // ---- 1KB ----
@@ -101,17 +94,10 @@ public class HardenedParserBenchmark
     }
 
     [Benchmark]
-    public void Header1K_ROS()
+    public void Header1K_MultiSegment()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeader(ref _seg1K, _into.Source, in Limits, out _);
-    }
-
-    [Benchmark]
-    public void Header1K_Linearized()
-    {
-        _into.Reset();
-        HardenedParser.TryExtractFullHeader(ref _seg1K, _into.Source, in Limits, out _, linearize: true);
     }
 
     // ---- 4KB ----
@@ -124,17 +110,10 @@ public class HardenedParserBenchmark
     }
 
     [Benchmark]
-    public void Header4K_ROS()
+    public void Header4K_MultiSegment()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeader(ref _seg4K, _into.Source, in Limits, out _);
-    }
-
-    [Benchmark]
-    public void Header4K_Linearized()
-    {
-        _into.Reset();
-        HardenedParser.TryExtractFullHeader(ref _seg4K, _into.Source, in Limits, out _, linearize: true);
     }
 
     // ---- 16KB ----
@@ -147,17 +126,10 @@ public class HardenedParserBenchmark
     }
 
     [Benchmark]
-    public void Header16K_ROS()
+    public void Header16K_MultiSegment()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeader(ref _seg16K, _into.Source, in Limits, out _);
-    }
-
-    [Benchmark]
-    public void Header16K_Linearized()
-    {
-        _into.Reset();
-        HardenedParser.TryExtractFullHeader(ref _seg16K, _into.Source, in Limits, out _, linearize: true);
     }
 
     // ---- 32KB ----
@@ -170,16 +142,9 @@ public class HardenedParserBenchmark
     }
 
     [Benchmark]
-    public void Header32K_ROS()
+    public void Header32K_MultiSegment()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeader(ref _seg32K, _into.Source, in Limits, out _);
-    }
-
-    [Benchmark]
-    public void Header32K_Linearized()
-    {
-        _into.Reset();
-        HardenedParser.TryExtractFullHeader(ref _seg32K, _into.Source, in Limits, out _, linearize: true);
     }
 }

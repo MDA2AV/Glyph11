@@ -6,30 +6,25 @@ namespace Glyph11.Parser.FlexParser;
 public static partial class FlexibleParser
 {
     /// <summary>
-    /// Tries to extract a full header(status line plus headers), will not yield any progress unless full header is present.
+    /// Tries to extract a full header (status line plus headers), will not yield any progress unless full header is present.
+    /// Single-segment input uses zero-copy ROM path. Multi-segment input is linearized to a contiguous array first.
     /// </summary>
-    public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> input, BinaryRequest request, out int bytesReadCount,
-        bool linearize = false)
+    public static bool TryExtractFullHeader(ref ReadOnlySequence<byte> input, BinaryRequest request, out int bytesReadCount)
     {
         if (input.IsSingleSegment)
         {
             ReadOnlyMemory<byte> singleMemorySegment = input.First;
-
             return TryExtractFullHeaderReadOnlyMemory(ref singleMemorySegment, request, out bytesReadCount);
         }
 
-        if (linearize)
+        var reader = new SequenceReader<byte>(input);
+        if (!reader.TryReadTo(out ReadOnlySequence<byte> _, CrlfCrlf, advancePastDelimiter: true))
         {
-            if (!IsFullHeaderPresent(ref input))
-            {
-                bytesReadCount = -1;
-                return false;
-            }
-
-            ReadOnlyMemory<byte> mem = input.ToArray();
-            return TryExtractFullHeaderReadOnlyMemory(ref mem, request, out bytesReadCount);
+            bytesReadCount = -1;
+            return false;
         }
 
-        return TryExtractFullHeaderReadOnlySequence(ref input, request, out bytesReadCount);
+        ReadOnlyMemory<byte> mem = input.ToArray();
+        return TryExtractFullHeaderReadOnlyMemory(ref mem, request, out bytesReadCount);
     }
 }

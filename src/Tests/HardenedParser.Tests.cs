@@ -10,7 +10,7 @@ namespace Tests;
 
 /// <summary>
 /// Tests for HardenedParser (security-hardened parser) and RequestSemantics.
-/// Each parsing test runs against both ROM and ROS paths via [Theory].
+/// Each parsing test runs against both ROM and multi-segment paths via [Theory].
 /// </summary>
 public class HardenedParserTests : IDisposable
 {
@@ -31,7 +31,7 @@ public class HardenedParserTests : IDisposable
         if (multiSegment)
         {
             var seq = SplitIntoSegments(bytes);
-            return (HardenedParser.TryExtractFullHeaderROS(ref seq, _request, in limits, out var b), b);
+            return (HardenedParser.TryExtractFullHeader(ref seq, _request, in limits, out var b), b);
         }
 
         ReadOnlyMemory<byte> rom = bytes;
@@ -782,7 +782,7 @@ public class HardenedParserTests : IDisposable
     }
 
     [Fact]
-    public void DispatchRoutesMultiSegmentToROS()
+    public void DispatchRoutesMultiSegmentToLinearized()
     {
         var bytes = Encoding.ASCII.GetBytes("GET / HTTP/1.1\r\n\r\n");
         var seq = SplitIntoSegments(bytes);

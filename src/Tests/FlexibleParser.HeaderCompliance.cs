@@ -9,7 +9,7 @@ namespace Tests;
 /// <summary>
 /// HTTP/1.1 header parsing compliance tests (RFC 9112).
 /// Each test runs against both the single-segment (ReadOnlyMemory) and
-/// multi-segment (ReadOnlySequence) parser paths.
+/// multi-segment (linearized) parser paths.
 /// </summary>
 public class FlexibleParserHeaderCompliance : IDisposable
 {
@@ -26,7 +26,7 @@ public class FlexibleParserHeaderCompliance : IDisposable
         if (multiSegment)
         {
             var seq = SplitIntoSegments(bytes);
-            return (FlexibleParser.TryExtractFullHeaderReadOnlySequence(ref seq, _request, out var b), b);
+            return (FlexibleParser.TryExtractFullHeader(ref seq, _request, out var b), b);
         }
 
         ReadOnlyMemory<byte> rom = bytes;
