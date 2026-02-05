@@ -35,5 +35,5 @@ jobs:
 
     - name: Run benchmark
       run: dotnet run -c release
-      working-directory: src/Benchmark/
+      working-directory: src/Benchmarks/
 
