@@ -1,13 +1,13 @@
-[![NuGet](https://img.shields.io/nuget/v/Glyph11.svg)](https://www.nuget.org/packages/Glyph11/)
-
 # Glyph11
 
 Glyph11 is a dependency free, low allocation HTTP/1.1 parser for C#. It does not rely on any specific network technology but can be used with any (such as `Socket`, `NetworkStream`, `PipeReader` or anything else).
 
-> [!IMPORTANT]  
-> This is an early stage development project which currently lacks conformity tests.
+[![NuGet](https://img.shields.io/nuget/v/Glyph11.svg)](https://www.nuget.org/packages/Glyph11/)
 
 ## Usage
+
+> [!IMPORTANT]  
+> This is an early stage development project which currently lacks conformity tests.
 
 ```csharp
 ReadOnlySequence<byte> buffer = ...; // e.g. read from pipe reader
