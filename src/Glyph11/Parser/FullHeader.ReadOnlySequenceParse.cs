@@ -5,8 +5,14 @@ using Glyph11.Protocol;
 
 namespace Glyph11.Parser;
 
+/// <summary>
+/// 
+/// </summary>
 public static partial class Parser11
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [Pure]
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
