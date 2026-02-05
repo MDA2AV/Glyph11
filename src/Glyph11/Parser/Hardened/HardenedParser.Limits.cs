@@ -1,18 +1,36 @@
 namespace Glyph11.Parser.Hardened;
 
 /// <summary>
-/// Resource limits for the security-hardened HTTP/1.1 parser.
+/// Configurable resource limits for <see cref="HardenedParser"/>.
+/// Every field has a safe default via <see cref="Default"/>. Customize with <c>with</c> expressions:
+/// <code>
+/// var strict = ParserLimits.Default with { MaxHeaderCount = 50 };
+/// </code>
 /// </summary>
 public readonly record struct ParserLimits
 {
+    /// <summary>Maximum number of header fields allowed (default 100).</summary>
     public int MaxHeaderCount { get; init; }
+
+    /// <summary>Maximum length of a single header name in bytes (default 256).</summary>
     public int MaxHeaderNameLength { get; init; }
+
+    /// <summary>Maximum length of a single header value in bytes (default 8192).</summary>
     public int MaxHeaderValueLength { get; init; }
+
+    /// <summary>Maximum length of the request URL in bytes (default 8192).</summary>
     public int MaxUrlLength { get; init; }
+
+    /// <summary>Maximum number of query string parameters (default 128).</summary>
     public int MaxQueryParameterCount { get; init; }
+
+    /// <summary>Maximum length of the HTTP method token in bytes (default 16).</summary>
     public int MaxMethodLength { get; init; }
+
+    /// <summary>Maximum total size of the header block including request line and terminators (default 32768).</summary>
     public int MaxTotalHeaderBytes { get; init; }
 
+    /// <summary>Returns a <see cref="ParserLimits"/> with safe production defaults.</summary>
     public static ParserLimits Default => new()
     {
         MaxHeaderCount = 100,

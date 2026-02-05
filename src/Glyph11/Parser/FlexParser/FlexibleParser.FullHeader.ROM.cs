@@ -5,8 +5,13 @@ namespace Glyph11.Parser.FlexParser;
 public static partial class FlexibleParser
 {
     /// <summary>
-    /// Hot Path, single segment
+    /// Zero-copy single-segment parse path.
+    /// All parsed fields are <see cref="ReadOnlyMemory{T}"/> slices into <paramref name="input"/>.
     /// </summary>
+    /// <param name="input">Contiguous buffer containing the full HTTP request header.</param>
+    /// <param name="request">Target to populate with parsed method, path, headers, etc.</param>
+    /// <param name="bytesReadCount">Number of bytes consumed (header + terminators - 1), or -1 if incomplete.</param>
+    /// <returns><c>true</c> if a complete header was parsed; <c>false</c> if the <c>\r\n\r\n</c> terminator was not found.</returns>
     public static bool TryExtractFullHeaderReadOnlyMemory(ref ReadOnlyMemory<byte> input, BinaryRequest request, out int bytesReadCount)
     {
         bytesReadCount = -1;

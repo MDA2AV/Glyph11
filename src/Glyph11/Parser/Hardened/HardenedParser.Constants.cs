@@ -4,7 +4,13 @@ using System.Runtime.CompilerServices;
 namespace Glyph11.Parser.Hardened;
 
 /// <summary>
-/// 
+/// Security-hardened HTTP/1.1 header parser with RFC 9110/9112 validation
+/// and configurable resource limits via <see cref="ParserLimits"/>.
+/// <para>
+/// Validates method and header-name tokens, field-value characters,
+/// HTTP version format, and enforces size/count limits. Throws
+/// <see cref="InvalidOperationException"/> on any protocol violation.
+/// </para>
 /// </summary>
 [SkipLocalsInit]
 public static partial class HardenedParser
