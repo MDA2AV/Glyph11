@@ -10,10 +10,10 @@ public static partial class Parser11
     [Pure]
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryExtractFullHeaderReadOnlySequence(ref ReadOnlySequence<byte> seq, IBinaryRequest request, out int bytesReadCount)
+    public static bool TryExtractFullHeaderReadOnlySequence(ref ReadOnlySequence<byte> seq, BinaryRequest request, out int bytesReadCount)
     {
         bytesReadCount = -1;
-        
+
         if (!IsFullHeaderPresent(ref seq))
             return false;
 
@@ -48,7 +48,7 @@ public static partial class Parser11
     [Pure]
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryParseStatusLine(in ReadOnlySequence<byte> statusLineSequence, IBinaryRequest request)
+    private static bool TryParseStatusLine(in ReadOnlySequence<byte> statusLineSequence, BinaryRequest request)
     {
         var r = new SequenceReader<byte>(statusLineSequence);
 
@@ -70,12 +70,12 @@ public static partial class Parser11
         SequencePosition? qPos = urlSeq.PositionOf(Question); // '?'
         if (qPos is null)
         {
-            request.Route = urlSeq.ToArray();
+            request.Path = urlSeq.ToArray();
             return true;
         }
 
         var routeSeq = urlSeq.Slice(0, qPos.Value);
-        request.Route = routeSeq.ToArray();
+        request.Path = routeSeq.ToArray();
 
         // Query begins AFTER '?'
         var querySeq = urlSeq.Slice(urlSeq.GetPosition(1, qPos.Value));
@@ -83,10 +83,10 @@ public static partial class Parser11
         ParseQueryParams(querySeq, request);
         return true;
     }
-    
+
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ParseQueryParams(in ReadOnlySequence<byte> querySeq, IBinaryRequest request)
+    private static void ParseQueryParams(in ReadOnlySequence<byte> querySeq, BinaryRequest request)
     {
         // Split by '&', then key/value by '=' (same behavior as your single segment)
         var qReader = new SequenceReader<byte>(querySeq);
@@ -123,10 +123,10 @@ public static partial class Parser11
                 valSeq.ToArray());
         }
     }
-    
+
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void TryParseHeaderLine(in ReadOnlySequence<byte> lineSeq, IBinaryRequest request)
+    private static void TryParseHeaderLine(in ReadOnlySequence<byte> lineSeq, BinaryRequest request)
     {
         // Find ':'
         var colonPos = lineSeq.PositionOf(Colon);
@@ -148,7 +148,7 @@ public static partial class Parser11
             keySeq.ToArray(),
             valueSeq.ToArray());
     }
-    
+
     [Pure]
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

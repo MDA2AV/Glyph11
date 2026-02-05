@@ -26,4 +26,8 @@
 
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="ProprietaryCollections\" />
+    </ItemGroup>
+
 </Project>

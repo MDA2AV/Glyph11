@@ -1,6 +1,6 @@
-using GinHTTP.Protocol;
+using GenHTTP.Engine.Draft.Types;
 
-namespace GinHTTP.Context;
+namespace GenHTTP.Context;
 
 public class ClientContext
 {
@@ -8,6 +8,6 @@ public class ClientContext
 
     internal void Clear()
     {
-        Request.Clear();
+        Request.Reset();
     }
 }

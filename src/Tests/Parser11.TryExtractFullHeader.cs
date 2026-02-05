@@ -1,7 +1,10 @@
 using System.Buffers;
 using System.Text;
-using GinHTTP.Protocol;
-using Glyph11.ProprietaryCollections;
+
+using GenHTTP.Api.Draft.Protocol;
+
+using GenHTTP.Engine.Draft.Types;
+using Glyph11.Protocol;
 using Parser11 = Glyph11.Parser.Parser11;
 
 namespace Tests;
@@ -23,7 +26,7 @@ public class Parser11TryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlyMemory(ref rom, data.Binary, out var position);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlyMemory(ref rom, data.Source, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -39,7 +42,7 @@ public class Parser11TryExtractFullHeader_ROM
 
         var data = new Request();
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var position);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Source, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
@@ -52,13 +55,13 @@ public class Parser11TryExtractFullHeader_ROM
     {
         // Method (enum + raw bytes)
         Assert.Equal(RequestMethod.Get, data.Method);
-        AssertAscii.Equal("GET", data.Binary.Method);
+        AssertAscii.Equal("GET", data.Source.Method);
 
         // Route (path only)
-        AssertAscii.Equal(ExpectedPath, data.Binary.Route);
+        AssertAscii.Equal(ExpectedPath, data.Source.Path);
 
         // Query params
-        var qp = (PooledKeyValueList)data.Binary.QueryParameters;
+        var qp = data.Source.QueryParameters;
         Assert.Equal(4, qp.Count);
 
         AssertKeyValue(qp, "p1", "1");
@@ -67,14 +70,14 @@ public class Parser11TryExtractFullHeader_ROM
         AssertKeyValue(qp, "p4", "4");
 
         // Headers
-        var headers = (PooledKeyValueList)data.Binary.Headers;
+        var headers = data.Source.Headers;
         Assert.Equal(2, headers.Count);
 
         AssertKeyValue(headers, "Content-Length", "100");
         AssertKeyValue(headers, "Server", "GenHTTP");
     }
 
-    private static void AssertKeyValue(PooledKeyValueList list, string expectedKey, string expectedValue)
+    private static void AssertKeyValue(KeyValueList list, string expectedKey, string expectedValue)
     {
         for (int i = 0; i < list.Count; i++)
         {

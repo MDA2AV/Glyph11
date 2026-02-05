@@ -1,4 +1,4 @@
-namespace GinHTTP;
+namespace GenHTTP;
 
 public class ClientHandler
 {

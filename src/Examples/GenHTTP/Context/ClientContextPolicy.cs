@@ -1,6 +1,6 @@
 using Microsoft.Extensions.ObjectPool;
 
-namespace GinHTTP.Context;
+namespace GenHTTP.Context;
 
 public class ClientContextPolicy : PooledObjectPolicy<ClientContext>
 {

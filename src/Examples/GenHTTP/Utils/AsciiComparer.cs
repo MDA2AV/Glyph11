@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace GinHTTP.Utils;
+namespace GenHTTP.Utils;
 
 public static class AsciiComparer
 {
