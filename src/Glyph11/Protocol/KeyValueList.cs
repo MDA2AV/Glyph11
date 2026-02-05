@@ -1,14 +1,15 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace Glyph11.ProprietaryCollections;
+namespace Glyph11.Protocol;
 
-public sealed class PooledKeyValueList : IKeyValueList, IDisposable
+public sealed class KeyValueList : IDisposable
 {
     private KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>[] _items;
+
     private int _count;
 
-    public PooledKeyValueList(int initialCapacity = 16)
+    public KeyValueList(int initialCapacity = 16)
     {
         if (initialCapacity <= 0) initialCapacity = 1;
         _items = ArrayPool<KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>>.Shared.Rent(initialCapacity);
@@ -28,7 +29,7 @@ public sealed class PooledKeyValueList : IKeyValueList, IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Add(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> value)
+    internal void Add(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> value)
     {
         int i = _count;
         if ((uint)i < (uint)_items.Length)
@@ -59,7 +60,7 @@ public sealed class PooledKeyValueList : IKeyValueList, IDisposable
         _items[_count++] = new KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>(key, value);
     }
 
-    public void Clear()
+    internal void Clear()
     {
         Array.Clear(_items, 0, _count);
         _count = 0;
@@ -67,15 +68,16 @@ public sealed class PooledKeyValueList : IKeyValueList, IDisposable
 
     public void Dispose()
     {
-        if (_items is null) 
+        if (_items is null)
             return;
-        
+
         Array.Clear(_items, 0, _count);
         ArrayPool<KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>>.Shared.Return(_items);
         _items = null!;
         _count = 0;
     }
-    
+
     public ReadOnlySpan<KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>> AsSpan()
         => _items.AsSpan(0, _count);
+
 }

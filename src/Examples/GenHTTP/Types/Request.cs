@@ -1,15 +1,20 @@
-using GinHTTP.Utils;
+﻿using GenHTTP.Api.Draft.Protocol;
+using GenHTTP.Api.Draft.Protocol.Raw;
+
+using GenHTTP.Utils;
 using Glyph11.Protocol;
 
-namespace GinHTTP.Protocol;
+namespace GenHTTP.Engine.Draft.Types;
 
-public class Request : IRequest
+public sealed class Request : IRequest
 {
-    private readonly BinaryRequest _binary = new();
-    
+    private readonly RawRequest _raw = new();
+
     private RequestMethod? _method;
-    
-    public IBinaryRequest Binary => _binary;
+
+    public IRawRequest Raw => _raw;
+
+    internal BinaryRequest Source => _raw.Source;
 
     public RequestMethod Method
     {
@@ -17,7 +22,7 @@ public class Request : IRequest
         {
             if (_method == null)
             {
-                var m = _binary.Method.Span;
+                var m = _raw.Method.Span;
 
                 _method = m.Length switch
                 {
@@ -37,11 +42,17 @@ public class Request : IRequest
             return _method.Value;
         }
     }
-    
-    public void Clear()
+
+    public void Reset()
     {
+        _raw.Reset();
+
         _method = null;
-        Binary.QueryParameters.Clear();
-        Binary.Headers.Clear();
     }
+
+    public void Apply()
+    {
+        _raw.Apply();
+    }
+
 }

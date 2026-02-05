@@ -1,4 +1,4 @@
-namespace GinHTTP.Protocol;
+﻿namespace GenHTTP.Api.Draft.Protocol;
 
 public enum RequestMethod
 {

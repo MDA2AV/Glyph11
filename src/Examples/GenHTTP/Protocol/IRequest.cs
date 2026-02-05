@@ -1,10 +1,12 @@
-using Glyph11.Protocol;
+﻿using GenHTTP.Api.Draft.Protocol.Raw;
 
-namespace GinHTTP.Protocol;
+namespace GenHTTP.Api.Draft.Protocol;
 
 public interface IRequest
 {
-    IBinaryRequest Binary { get; }
+
+    IRawRequest Raw { get; }
 
     RequestMethod Method { get; }
+
 }

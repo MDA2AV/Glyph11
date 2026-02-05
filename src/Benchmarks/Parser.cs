@@ -6,7 +6,7 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
-using GinHTTP.Protocol;
+using GenHTTP.Engine.Draft.Types;
 using Parser11 = Glyph11.Parser.Parser11;
 
 namespace Benchmarks;
@@ -67,14 +67,15 @@ public class Parser
     [Benchmark]
     public void BenchmarkSingleSegmentParser()
     {
-        _into.Clear();
-        Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Binary, out var bytesReadCount);
+        _into.Reset();
+        Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Source, out var bytesReadCount);
     }
 
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {
-        _into.Clear();
-        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Binary, out var bytesReadCount);
+        _into.Reset();
+        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out var bytesReadCount);
     }
+
 }

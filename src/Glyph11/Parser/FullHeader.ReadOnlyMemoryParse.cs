@@ -7,7 +7,7 @@ public static partial class Parser11
     /// <summary>
     /// Hot Path, single segment
     /// </summary>
-    public static bool TryExtractFullHeaderReadOnlyMemory(ref ReadOnlyMemory<byte> input, IBinaryRequest request, out int bytesReadCount)
+    public static bool TryExtractFullHeaderReadOnlyMemory(ref ReadOnlyMemory<byte> input, BinaryRequest request, out int bytesReadCount)
     {
         bytesReadCount = -1;
         var slicedInputSpan = input.Span;
@@ -27,9 +27,9 @@ public static partial class Parser11
         if (secondSpaceRelativeIndex < 0) throw new InvalidOperationException("Invalid request line.");
 
         int secondSpaceIndex = firstSpaceIndex + 1 + secondSpaceRelativeIndex;
-        
+
         request.Method = input[..firstSpaceIndex];
-        
+
         int urlStart = firstSpaceIndex + 1;
         int urlLen = secondSpaceIndex - urlStart;
         var urlSpan = requestLine.Slice(urlStart, urlLen);
@@ -38,7 +38,7 @@ public static partial class Parser11
         if (queryStartIndex >= 0)
         {
             // Route is path portion only
-            request.Route = input.Slice(urlStart, queryStartIndex);
+            request.Path = input.Slice(urlStart, queryStartIndex);
 
             // Query part after '?'
             int queryAbsStart = urlStart + queryStartIndex + 1;
@@ -68,9 +68,9 @@ public static partial class Parser11
         }
         else
         {
-            request.Route = input.Slice(urlStart, urlLen);
+            request.Path = input.Slice(urlStart, urlLen);
         }
-        
+
         int lineStart = requestLineEnd + 2;
 
         while (true)
@@ -87,7 +87,7 @@ public static partial class Parser11
             {
                 int keyAbsStart = lineStart;
                 int valAbsStart = lineStart + colon + 1;
-                
+
                 while (valAbsStart < lineStart + lineLen)
                 {
                     byte b = slicedInputSpan[valAbsStart];
@@ -104,7 +104,7 @@ public static partial class Parser11
 
             lineStart += lineLen + 2;
         }
-        
+
         bytesReadCount += headerEnd + 4;
         return true;
     }

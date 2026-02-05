@@ -14,4 +14,8 @@
       <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Types\" />
+    </ItemGroup>
+
 </Project>
