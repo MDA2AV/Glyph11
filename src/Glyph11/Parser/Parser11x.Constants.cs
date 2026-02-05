@@ -119,10 +119,14 @@ public static partial class Parser11x
         if (seq.IsSingleSegment)
             return IsValidToken(seq.FirstSpan);
 
-        foreach (var segment in seq)
+        var position = seq.Start;
+        var end = seq.End;
+        while (seq.TryGet(ref position, out ReadOnlyMemory<byte> memory))
         {
-            if (!IsValidToken(segment.Span))
+            if (!IsValidToken(memory.Span))
                 return false;
+            if (position.Equals(end))
+                break;
         }
         return true;
     }
@@ -133,10 +137,14 @@ public static partial class Parser11x
         if (seq.IsSingleSegment)
             return IsValidFieldValue(seq.FirstSpan);
 
-        foreach (var segment in seq)
+        var position = seq.Start;
+        var end = seq.End;
+        while (seq.TryGet(ref position, out ReadOnlyMemory<byte> memory))
         {
-            if (!IsValidFieldValue(segment.Span))
+            if (!IsValidFieldValue(memory.Span))
                 return false;
+            if (position.Equals(end))
+                break;
         }
         return true;
     }

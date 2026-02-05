@@ -1,42 +1,16 @@
 using System.Buffers;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Columns;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Exporters;
-using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Loggers;
-using BenchmarkDotNet.Running;
 using GenHTTP.Engine.Draft.Types;
-using Parser11 = Glyph11.Parser.Parser11;
+using Glyph11.Parser;
 
 namespace Benchmarks;
 
-public static class Program
-{
-    public sealed class FastConfig : ManualConfig
-    {
-        public FastConfig()
-        {
-            AddJob(Job.Default
-                .WithMinIterationCount(5)
-                .WithMaxIterationCount(15));
-
-            // optional but useful (removes your other warnings)
-            AddLogger(ConsoleLogger.Default);
-            AddExporter(MarkdownExporter.Default);
-            AddColumnProvider(DefaultColumnProviders.Instance);
-        }
-    }
-    public static void Main(string[] args)
-    {
-        BenchmarkRunner.Run([ typeof(Parser), typeof(ParserX) ], new FastConfig());
-    }
-}
-
 [MemoryDiagnoser]
-public class Parser
+public class ParserX
 {
     private readonly Request _into = new();
+
+    private static readonly ParserLimits Limits = ParserLimits.Default;
 
     private readonly ReadOnlySequence<byte> _buffer =
         new(("GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n"u8 +
@@ -47,7 +21,7 @@ public class Parser
 
     private ReadOnlyMemory<byte> _memory;
 
-    public Parser()
+    public ParserX()
     {
         _memory = _buffer.ToArray();
     }
@@ -68,14 +42,13 @@ public class Parser
     public void BenchmarkSingleSegmentParser()
     {
         _into.Reset();
-        Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Source, out var bytesReadCount);
+        Parser11x.TryExtractFullHeaderROM(ref _memory, _into.Source, in Limits, out var bytesReadCount);
     }
 
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {
         _into.Reset();
-        Parser11.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out var bytesReadCount);
+        Parser11x.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, in Limits, out var bytesReadCount);
     }
-
 }
