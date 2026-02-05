@@ -18,8 +18,8 @@ public static class Program
         public FastConfig()
         {
             AddJob(Job.Default
-                .WithMinIterationCount(5)
-                .WithMaxIterationCount(15));
+                .WithMinIterationCount(1)
+                .WithMaxIterationCount(5));
 
             // optional but useful (removes your other warnings)
             AddLogger(ConsoleLogger.Default);

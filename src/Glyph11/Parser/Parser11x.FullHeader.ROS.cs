@@ -20,9 +20,6 @@ public static partial class Parser11x
     {
         bytesReadCount = -1;
 
-        if (!IsFullHeaderPresentROS(ref seq))
-            return false;
-
         var reader = new SequenceReader<byte>(seq);
 
         // ---- Status line: METHOD SP URL SP VERSION\r\n ----
@@ -37,7 +34,7 @@ public static partial class Parser11x
         while (true)
         {
             if (!reader.TryReadTo(out ReadOnlySequence<byte> headerLine, Crlf, advancePastDelimiter: true))
-                throw new InvalidOperationException("Invalid headers.");
+                return false; // incomplete — need more data
 
             if (headerLine.Length == 0)
                 break;
@@ -59,33 +56,39 @@ public static partial class Parser11x
         in ReadOnlySequence<byte> statusLineSequence, BinaryRequest request,
         in ParserLimits limits)
     {
-        var r = new SequenceReader<byte>(statusLineSequence);
-
-        // METHOD
-        if (!r.TryReadTo(out ReadOnlySequence<byte> methodSeq, Space, advancePastDelimiter: true))
+        // METHOD — find first SP
+        var firstSpacePos = statusLineSequence.PositionOf(Space);
+        if (firstSpacePos is null)
             throw new InvalidOperationException("Invalid HTTP/1.1 request line.");
 
+        var methodSeq = statusLineSequence.Slice(0, firstSpacePos.Value);
         if (methodSeq.Length == 0 || methodSeq.Length > limits.MaxMethodLength)
             throw new InvalidOperationException("Method length exceeds limit.");
-        if (!IsValidTokenSequence(methodSeq))
-            throw new InvalidOperationException("Method contains invalid token characters.");
 
-        // URL
-        if (!r.TryReadTo(out ReadOnlySequence<byte> urlSeq, Space, advancePastDelimiter: true))
+        // URL — find second SP
+        var afterMethod = statusLineSequence.Slice(statusLineSequence.GetPosition(1, firstSpacePos.Value));
+        var secondSpacePos = afterMethod.PositionOf(Space);
+        if (secondSpacePos is null)
             throw new InvalidOperationException("Invalid request line: missing version.");
 
+        var urlSeq = afterMethod.Slice(0, secondSpacePos.Value);
         if (urlSeq.Length > limits.MaxUrlLength)
             throw new InvalidOperationException("URL length exceeds limit.");
 
         // VERSION
-        var versionSeq = statusLineSequence.Slice(r.Position);
+        var versionSeq = afterMethod.Slice(afterMethod.GetPosition(1, secondSpacePos.Value));
         if (versionSeq.Length == 0)
             throw new InvalidOperationException("Invalid request line: missing version.");
         if (!IsValidHttpVersionSequence(versionSeq))
             throw new InvalidOperationException("Invalid HTTP version.");
 
-        request.Method = methodSeq.ToArray();
-        request.Version = versionSeq.ToArray();
+        // Copy method, then validate the contiguous span
+        var methodArr = methodSeq.ToArray();
+        if (!IsValidToken(methodArr))
+            throw new InvalidOperationException("Method contains invalid token characters.");
+
+        request.Method = methodArr;
+        request.Version = ResolveCachedVersion(versionSeq);
 
         // Split URL into path + query
         SequencePosition? qPos = urlSeq.PositionOf(Question);
@@ -108,15 +111,22 @@ public static partial class Parser11x
         in ReadOnlySequence<byte> querySeq, BinaryRequest request,
         in ParserLimits limits)
     {
-        var qReader = new SequenceReader<byte>(querySeq);
+        var remaining = querySeq;
         int paramCount = 0;
 
-        while (qReader.Remaining > 0)
+        while (remaining.Length > 0)
         {
-            if (!qReader.TryReadTo(out ReadOnlySequence<byte> pairSeq, QuerySeparator, advancePastDelimiter: true))
+            ReadOnlySequence<byte> pairSeq;
+            var ampPos = remaining.PositionOf(QuerySeparator);
+            if (ampPos is null)
             {
-                pairSeq = qReader.Sequence.Slice(qReader.Position, qReader.Sequence.End);
-                qReader.Advance(pairSeq.Length);
+                pairSeq = remaining;
+                remaining = remaining.Slice(remaining.End);
+            }
+            else
+            {
+                pairSeq = remaining.Slice(0, ampPos.Value);
+                remaining = remaining.Slice(remaining.GetPosition(1, ampPos.Value));
             }
 
             if (pairSeq.Length == 0)
@@ -157,23 +167,26 @@ public static partial class Parser11x
 
         if (keySeq.Length > limits.MaxHeaderNameLength)
             throw new InvalidOperationException("Header name length exceeds limit.");
-        if (!IsValidTokenSequence(keySeq))
-            throw new InvalidOperationException("Header name contains invalid token characters.");
 
         var valueSeq = lineSeq.Slice(lineSeq.GetPosition(1, colonPos.Value));
         valueSeq = TrimStartSpacesAndTabsX(valueSeq);
 
         if (valueSeq.Length > limits.MaxHeaderValueLength)
             throw new InvalidOperationException("Header value length exceeds limit.");
-        if (!IsValidFieldValueSequence(valueSeq))
-            throw new InvalidOperationException("Header value contains invalid characters.");
 
         if (++headerCount > limits.MaxHeaderCount)
             throw new InvalidOperationException("Header count exceeds limit.");
 
-        request.Headers.Add(
-            keySeq.ToArray(),
-            valueSeq.ToArray());
+        // Copy first, then validate the contiguous span (avoids multi-segment iteration)
+        var keyArr = keySeq.ToArray();
+        if (!IsValidToken(keyArr))
+            throw new InvalidOperationException("Header name contains invalid token characters.");
+
+        var valArr = valueSeq.ToArray();
+        if (!IsValidFieldValue(valArr))
+            throw new InvalidOperationException("Header value contains invalid characters.");
+
+        request.Headers.Add(keyArr, valArr);
     }
 
     [Pure]
@@ -181,26 +194,29 @@ public static partial class Parser11x
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySequence<byte> TrimStartSpacesAndTabsX(ReadOnlySequence<byte> seq)
     {
-        var r = new SequenceReader<byte>(seq);
-
-        while (r.Remaining > 0)
+        // Fast path: OWS is almost always within the first segment
+        var span = seq.FirstSpan;
+        int skip = 0;
+        while (skip < span.Length)
         {
-            if (!r.TryPeek(out byte b))
-                break;
-            if (b != (byte)' ' && b != (byte)'\t')
-                break;
-            r.Advance(1);
+            byte b = span[skip];
+            if (b != (byte)' ' && b != (byte)'\t') break;
+            skip++;
         }
 
+        if (skip < span.Length || seq.IsSingleSegment)
+            return seq.Slice(skip);
+
+        // Slow path: OWS spans segment boundary (extremely rare)
+        var r = new SequenceReader<byte>(seq);
+        r.Advance(skip);
+        while (r.Remaining > 0)
+        {
+            if (!r.TryPeek(out byte b)) break;
+            if (b != (byte)' ' && b != (byte)'\t') break;
+            r.Advance(1);
+        }
         return seq.Slice(r.Position);
     }
 
-    [Pure]
-    [SkipLocalsInit]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsFullHeaderPresentROS(ref ReadOnlySequence<byte> seq)
-    {
-        var sequenceReader = new SequenceReader<byte>(seq);
-        return sequenceReader.TryReadTo(out ReadOnlySequence<byte> _, CrlfCrlf, advancePastDelimiter: true);
-    }
 }
