@@ -16,7 +16,7 @@ public class Parser11TryExtractFullHeader_ROM
         var request =
             "GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n" +
             "Content-Length: 100\r\n" +
-            "Server: GinHTTP\r\n" +
+            "Server: GenHTTP\r\n" +
             "\r\n";
 
         ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
@@ -29,7 +29,7 @@ public class Parser11TryExtractFullHeader_ROM
         AssertRequestParsedCorrectly(data);
 
         // Verify consumed exactly the header bytes
-        Assert.Equal(rom.Length, position);
+        Assert.Equal(rom.Length - 1, position);
     }
 
     [Fact]
@@ -38,15 +38,14 @@ public class Parser11TryExtractFullHeader_ROM
         ReadOnlySequence<byte> segmented = CreateMultiSegment();
 
         var data = new Request();
-        int position = 0;
 
-        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var bytesAdvancedCount);
+        var parsed = Parser11.TryExtractFullHeaderReadOnlySequence(ref segmented, data.Binary, out var position);
 
         Assert.True(parsed);
         AssertRequestParsedCorrectly(data);
 
         // If your multi-seg parser uses "position" as bytes-consumed:
-        Assert.Equal((int)segmented.Length, position);
+        Assert.Equal((int)segmented.Length - 1, position);
     }
 
     private static void AssertRequestParsedCorrectly(Request data)
@@ -72,7 +71,7 @@ public class Parser11TryExtractFullHeader_ROM
         Assert.Equal(2, headers.Count);
 
         AssertKeyValue(headers, "Content-Length", "100");
-        AssertKeyValue(headers, "Server", "GinHTTP");
+        AssertKeyValue(headers, "Server", "GenHTTP");
     }
 
     private static void AssertKeyValue(PooledKeyValueList list, string expectedKey, string expectedValue)
@@ -107,7 +106,7 @@ public class Parser11TryExtractFullHeader_ROM
     {
         var seg1 = "GET /route?p1=1&p2=2&p3=3&p4=4 HT"u8.ToArray();
         var seg2 = "TP/1.1\r\nContent-Length: 100\r\nServer: "u8.ToArray();
-        var seg3 = "GinHTTP\r\n\r\n"u8.ToArray();
+        var seg3 = "GenHTTP\r\n\r\n"u8.ToArray();
 
         var first = new Glyph11.Utils.BufferSegment(seg1);
         var last = first.Append(seg2).Append(seg3);

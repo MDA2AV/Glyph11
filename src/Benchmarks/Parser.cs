@@ -41,8 +41,8 @@ public class Parser
     private readonly ReadOnlySequence<byte> _buffer =
         new(("GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n"u8 +
             "Content-Length: 100\r\n"u8 +
-            "Server: GinHTTP\r\n\r\n"u8).ToArray());
-    
+            "Server: GenHTTP\r\n\r\n"u8).ToArray());
+
     private ReadOnlySequence<byte> _segmentedBuffer = CreateMultiSegment();
 
     private ReadOnlyMemory<byte> _memory;
@@ -51,12 +51,12 @@ public class Parser
     {
         _memory = _buffer.ToArray();
     }
-    
+
     private static ReadOnlySequence<byte> CreateMultiSegment()
     {
         var seg1 = "GET /route?p1=1&p2=2&p3=3&p4=4 HT"u8.ToArray();
         var seg2 = "TP/1.1\r\nContent-Length: 100\r\nServer: "u8.ToArray();
-        var seg3 = "GinHTTP\r\n\r\n"u8.ToArray();
+        var seg3 = "GenHTTP\r\n\r\n"u8.ToArray();
 
         var first = new Glyph11.Utils.BufferSegment(seg1);
         var last = first.Append(seg2).Append(seg3);
@@ -70,7 +70,7 @@ public class Parser
         _into.Clear();
         Parser11.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Binary, out var bytesReadCount);
     }
-    
+
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {

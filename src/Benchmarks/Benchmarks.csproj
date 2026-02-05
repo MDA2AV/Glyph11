@@ -2,13 +2,11 @@
 
     <PropertyGroup>
         <OutputType>exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Examples\GinHTTP\GinHTTP.csproj" />
+      <ProjectReference Include="..\Examples\GenHTTP\GenHTTP.csproj" />
       <ProjectReference Include="..\Glyph11\Glyph11.csproj" />
     </ItemGroup>
 
