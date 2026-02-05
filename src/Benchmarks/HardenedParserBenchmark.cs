@@ -2,11 +2,12 @@ using System.Buffers;
 using BenchmarkDotNet.Attributes;
 using GenHTTP.Engine.Draft.Types;
 using Glyph11.Parser;
+using Glyph11.Parser.Hardened;
 
 namespace Benchmarks;
 
 [MemoryDiagnoser]
-public class ParserX
+public class HardenedParserBenchmark
 {
     private readonly Request _into = new();
 
@@ -21,7 +22,7 @@ public class ParserX
 
     private ReadOnlyMemory<byte> _memory;
 
-    public ParserX()
+    public HardenedParserBenchmark()
     {
         _memory = _buffer.ToArray();
     }
@@ -42,13 +43,13 @@ public class ParserX
     public void BenchmarkSingleSegmentParser()
     {
         _into.Reset();
-        Parser11x.TryExtractFullHeaderROM(ref _memory, _into.Source, in Limits, out var bytesReadCount);
+        HardenedParser.TryExtractFullHeaderROM(ref _memory, _into.Source, in Limits, out var bytesReadCount);
     }
 
     [Benchmark]
     public void BenchmarkMultiSegmentParser()
     {
         _into.Reset();
-        Parser11x.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, in Limits, out var bytesReadCount);
+        HardenedParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, in Limits, out var bytesReadCount);
     }
 }

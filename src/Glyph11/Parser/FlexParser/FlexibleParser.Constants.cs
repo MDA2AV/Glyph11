@@ -2,10 +2,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.FlexParser;
 
 [SkipLocalsInit]
-public static partial class Parser11
+public static partial class FlexibleParser
 {
     // ---- Constants & literals ----
     private static ReadOnlySpan<byte> Crlf => "\r\n"u8;

@@ -2,16 +2,17 @@ using System.Buffers;
 using System.Text;
 using Glyph11.Protocol;
 using Glyph11.Parser;
+using Glyph11.Parser.Hardened;
 using Glyph11.Utils;
 using Glyph11.Validation;
 
 namespace Tests;
 
 /// <summary>
-/// Tests for Parser11x (security-hardened parser) and RequestSemantics.
+/// Tests for HardenedParser (security-hardened parser) and RequestSemantics.
 /// Each parsing test runs against both ROM and ROS paths via [Theory].
 /// </summary>
-public class Parser11xTests : IDisposable
+public class HardenedParserTests : IDisposable
 {
     private readonly BinaryRequest _request = new();
     private static readonly ParserLimits Defaults = ParserLimits.Default;
@@ -30,11 +31,11 @@ public class Parser11xTests : IDisposable
         if (multiSegment)
         {
             var seq = SplitIntoSegments(bytes);
-            return (Parser11x.TryExtractFullHeaderROS(ref seq, _request, in limits, out var b), b);
+            return (HardenedParser.TryExtractFullHeaderROS(ref seq, _request, in limits, out var b), b);
         }
 
         ReadOnlyMemory<byte> rom = bytes;
-        return (Parser11x.TryExtractFullHeaderROM(ref rom, _request, in limits, out var b2), b2);
+        return (HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in limits, out var b2), b2);
     }
 
     private static ReadOnlySequence<byte> SplitIntoSegments(byte[] data)
@@ -582,7 +583,7 @@ public class Parser11xTests : IDisposable
     [InlineData(true)]
     public void Throws_HeaderLineWithoutColon(bool multi)
     {
-        // Parser11 silently skips these; Parser11x throws
+        // FlexibleParser silently skips these; HardenedParser throws
         Assert.Throws<InvalidOperationException>(() =>
             Parse("GET / HTTP/1.1\r\nnocolonhere\r\n\r\n", multi));
     }
@@ -775,7 +776,7 @@ public class Parser11xTests : IDisposable
         var seq = new ReadOnlySequence<byte>(bytes);
         Assert.True(seq.IsSingleSegment);
 
-        var ok = Parser11x.TryExtractFullHeader(ref seq, _request, Defaults, out _);
+        var ok = HardenedParser.TryExtractFullHeader(ref seq, _request, Defaults, out _);
         Assert.True(ok);
         AssertAscii.Equal("GET", _request.Method);
     }
@@ -787,7 +788,7 @@ public class Parser11xTests : IDisposable
         var seq = SplitIntoSegments(bytes);
         Assert.False(seq.IsSingleSegment);
 
-        var ok = Parser11x.TryExtractFullHeader(ref seq, _request, Defaults, out _);
+        var ok = HardenedParser.TryExtractFullHeader(ref seq, _request, Defaults, out _);
         Assert.True(ok);
         AssertAscii.Equal("GET", _request.Method);
     }

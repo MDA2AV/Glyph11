@@ -1,9 +1,9 @@
 using System.Buffers;
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.Hardened;
 
-public static partial class Parser11x
+public static partial class HardenedParser
 {
     /// <summary>
     /// Security-hardened entry point. Dispatches to ROM or ROS path based on segment layout.

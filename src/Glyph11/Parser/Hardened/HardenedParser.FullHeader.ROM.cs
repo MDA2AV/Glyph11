@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.Hardened;
 
-public static partial class Parser11x
+public static partial class HardenedParser
 {
     /// <summary>
     /// Hot path — single-segment parse with full security validation.

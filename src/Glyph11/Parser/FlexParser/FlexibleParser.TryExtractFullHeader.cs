@@ -1,9 +1,9 @@
 using System.Buffers;
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.FlexParser;
 
-public static partial class Parser11
+public static partial class FlexibleParser
 {
     /// <summary>
     /// Tries to extract a full header(status line plus headers), will not yield any progress unless full header is present.

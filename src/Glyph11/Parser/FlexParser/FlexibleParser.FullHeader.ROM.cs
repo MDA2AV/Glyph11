@@ -1,8 +1,8 @@
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.FlexParser;
 
-public static partial class Parser11
+public static partial class FlexibleParser
 {
     /// <summary>
     /// Hot Path, single segment

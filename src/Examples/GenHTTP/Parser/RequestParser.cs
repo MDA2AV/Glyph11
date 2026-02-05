@@ -4,6 +4,7 @@ using System.IO.Pipelines;
 using GenHTTP.Engine.Draft.Types;
 
 using Glyph11.Parser;
+using Glyph11.Parser.FlexParser;
 
 namespace GenHTTP.Engine.Draft.Parser;
 
@@ -14,7 +15,7 @@ public static class RequestParser
     {
         var raw = into.Source;
 
-        if (Parser11.TryExtractFullHeader(ref buffer, raw, out bytesRead))
+        if (FlexibleParser.TryExtractFullHeader(ref buffer, raw, out bytesRead))
         {
             into.Apply();
             return true;

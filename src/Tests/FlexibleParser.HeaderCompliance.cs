@@ -1,8 +1,8 @@
 using System.Buffers;
 using System.Text;
+using Glyph11.Parser.FlexParser;
 using Glyph11.Protocol;
 using Glyph11.Utils;
-using Parser11 = Glyph11.Parser.Parser11;
 
 namespace Tests;
 
@@ -11,7 +11,7 @@ namespace Tests;
 /// Each test runs against both the single-segment (ReadOnlyMemory) and
 /// multi-segment (ReadOnlySequence) parser paths.
 /// </summary>
-public class Parser11HeaderCompliance : IDisposable
+public class FlexibleParserHeaderCompliance : IDisposable
 {
     private readonly BinaryRequest _request = new();
 
@@ -26,11 +26,11 @@ public class Parser11HeaderCompliance : IDisposable
         if (multiSegment)
         {
             var seq = SplitIntoSegments(bytes);
-            return (Parser11.TryExtractFullHeaderReadOnlySequence(ref seq, _request, out var b), b);
+            return (FlexibleParser.TryExtractFullHeaderReadOnlySequence(ref seq, _request, out var b), b);
         }
 
         ReadOnlyMemory<byte> rom = bytes;
-        return (Parser11.TryExtractFullHeaderReadOnlyMemory(ref rom, _request, out var b2), b2);
+        return (FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref rom, _request, out var b2), b2);
     }
 
     private static ReadOnlySequence<byte> SplitIntoSegments(byte[] data)

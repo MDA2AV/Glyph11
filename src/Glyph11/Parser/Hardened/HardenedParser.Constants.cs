@@ -1,10 +1,13 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace Glyph11.Parser;
+namespace Glyph11.Parser.Hardened;
 
+/// <summary>
+/// 
+/// </summary>
 [SkipLocalsInit]
-public static partial class Parser11x
+public static partial class HardenedParser
 {
     // ---- Line terminators ----
     private static ReadOnlySpan<byte> Crlf => "\r\n"u8;
