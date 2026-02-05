@@ -49,8 +49,8 @@ jobs:
         working-directory: src
 
       - name: Publish packages to NuGet
-        working-directory: artifacts
+        working-directory: src/artifacts
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push *.nupkg -k "$env:NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate 
-        working-directory: src
+
