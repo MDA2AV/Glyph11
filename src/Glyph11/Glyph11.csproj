@@ -1,10 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+
+        <Description>Dependency free, low allocation HTTP/1.1 parser for C#.</Description>
+        <PackageTags>C# HTTP Protocol Parser</PackageTags>
+
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <PackageProjectUrl>https://github.com/MDA2AV/Glyph11</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/MDA2AV/Glyph11</RepositoryUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Deterministic>true</Deterministic>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
     </PropertyGroup>
 
 </Project>

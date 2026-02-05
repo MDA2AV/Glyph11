@@ -16,7 +16,7 @@ public class Parser11TryExtractFullHeader_ROM
         var request =
             "GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n" +
             "Content-Length: 100\r\n" +
-            "Server: GinHTTP\r\n" +
+            "Server: GenHTTP\r\n" +
             "\r\n";
 
         ReadOnlyMemory<byte> rom = Encoding.ASCII.GetBytes(request);
@@ -72,7 +72,7 @@ public class Parser11TryExtractFullHeader_ROM
         Assert.Equal(2, headers.Count);
 
         AssertKeyValue(headers, "Content-Length", "100");
-        AssertKeyValue(headers, "Server", "GinHTTP");
+        AssertKeyValue(headers, "Server", "GenHTTP");
     }
 
     private static void AssertKeyValue(PooledKeyValueList list, string expectedKey, string expectedValue)
@@ -107,7 +107,7 @@ public class Parser11TryExtractFullHeader_ROM
     {
         var seg1 = "GET /route?p1=1&p2=2&p3=3&p4=4 HT"u8.ToArray();
         var seg2 = "TP/1.1\r\nContent-Length: 100\r\nServer: "u8.ToArray();
-        var seg3 = "GinHTTP\r\n\r\n"u8.ToArray();
+        var seg3 = "GenHTTP\r\n\r\n"u8.ToArray();
 
         var first = new Glyph11.Utils.BufferSegment(seg1);
         var last = first.Append(seg2).Append(seg3);
