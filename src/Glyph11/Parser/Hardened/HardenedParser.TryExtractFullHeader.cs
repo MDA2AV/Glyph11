@@ -11,12 +11,25 @@ public static partial class HardenedParser
     /// </summary>
     public static bool TryExtractFullHeader(
         ref ReadOnlySequence<byte> input, BinaryRequest request,
-        in ParserLimits limits, out int bytesReadCount)
+        in ParserLimits limits, out int bytesReadCount,
+        bool linearize = false)
     {
         if (input.IsSingleSegment)
         {
             ReadOnlyMemory<byte> singleMemorySegment = input.First;
             return TryExtractFullHeaderROM(ref singleMemorySegment, request, in limits, out bytesReadCount);
+        }
+
+        if (linearize)
+        {
+            if (!IsFullHeaderPresent(ref input))
+            {
+                bytesReadCount = -1;
+                return false;
+            }
+
+            ReadOnlyMemory<byte> mem = input.ToArray();
+            return TryExtractFullHeaderROM(ref mem, request, in limits, out bytesReadCount);
         }
 
         return TryExtractFullHeaderROS(ref input, request, in limits, out bytesReadCount);

@@ -192,6 +192,15 @@ public static partial class HardenedParser
     [Pure]
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsFullHeaderPresent(ref ReadOnlySequence<byte> seq)
+    {
+        var reader = new SequenceReader<byte>(seq);
+        return reader.TryReadTo(out ReadOnlySequence<byte> _, CrlfCrlf, advancePastDelimiter: true);
+    }
+
+    [Pure]
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySequence<byte> TrimStartSpacesAndTabsX(ReadOnlySequence<byte> seq)
     {
         // Fast path: OWS is almost always within the first segment
