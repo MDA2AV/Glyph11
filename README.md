@@ -12,9 +12,11 @@ ReadOnlySequence<byte> buffer = ...; // e.g. read from pipe reader
 
 IBinaryRequest request = ...; // a re-usable/poolable request implementation to parse into
 
-Parser11.TryExtractFullHeader(ref buffer, request, out var bytesRead);
-
-// access request.Path, .Body etc.
+if (Parser11.TryExtractFullHeader(ref buffer, request, out var bytesRead))
+{
+    // handle the request and access request.Path, .Body etc.
+    // advance the reader by bytesRead
+}
 ```
 
 ## Performance
