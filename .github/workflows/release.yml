@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+
+  publish:
+
+    name: Build & Publish Packages
+
+    runs-on: windows-latest  
+
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0
+
+      - name: Setup NuGet CLI
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: src
+
+      - name: Build solution
+        run: dotnet build --configuration Release --no-restore      
+        working-directory: src
+
+      - name: Pack
+        run: dotnet pack --configuration Release -p:ContinuousIntegrationBuild=true --no-build --output ./artifacts 
+        working-directory: src
+
+      - name: List gathered packages
+        run: dir artifacts  
+        working-directory: src
+
+      - name: Publish packages to NuGet
+        working-directory: artifacts
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push *.nupkg -k "$env:NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate 
+        working-directory: src
