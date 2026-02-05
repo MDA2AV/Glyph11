@@ -33,3 +33,7 @@ jobs:
       run: dotnet test
       working-directory: src
 
+    - name: Run benchmark
+      run: dotnet run -c release
+      working-directory: src/Benchmark/
+
