@@ -110,3 +110,9 @@ jobs:
         fail-on-alert: true
         comment-on-alert: true
         summary-always: true
+
+    - name: Rebuild docs site
+      if: github.ref == 'refs/heads/main'
+      run: gh workflow run "Deploy Docs to GitHub Pages"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
