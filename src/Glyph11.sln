@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glyph11", "Glyph11\Glyph11.csproj", "{23A35852-CC1D-4459-B054-502A60D746BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{8DD133D0-C052-4CF9-8A09-6E948E68311B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "..\tests\Tests\Tests.csproj", "{8DD133D0-C052-4CF9-8A09-6E948E68311B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenHTTP", "Examples\GenHTTP\GenHTTP.csproj", "{D6936307-4A8C-4636-ADA2-4761D101970E}"
 EndProject
