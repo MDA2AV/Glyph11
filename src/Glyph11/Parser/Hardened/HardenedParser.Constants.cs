@@ -100,22 +100,25 @@ public static partial class HardenedParser
 
     /// <summary>
     /// Case-insensitive match for "content-length" (14 bytes).
+    /// Uses OR 0x20 to lowercase ASCII letters; short-circuits on first mismatch.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsContentLength(ReadOnlySpan<byte> name)
         => name.Length == 14
-            && "content-length"u8.SequenceEqual(
-                // Fast lower-case via OR 0x20 — works because token chars are ASCII
-                stackalloc byte[14]
-                {
-                    (byte)(name[0]  | 0x20), (byte)(name[1]  | 0x20),
-                    (byte)(name[2]  | 0x20), (byte)(name[3]  | 0x20),
-                    (byte)(name[4]  | 0x20), (byte)(name[5]  | 0x20),
-                    (byte)(name[6]  | 0x20), (byte)(name[7]  | 0x20),
-                    (byte)(name[8]  | 0x20), (byte)(name[9]  | 0x20),
-                    (byte)(name[10] | 0x20), (byte)(name[11] | 0x20),
-                    (byte)(name[12] | 0x20), (byte)(name[13] | 0x20),
-                });
+            && (name[0]  | 0x20) == 'c'
+            && (name[1]  | 0x20) == 'o'
+            && (name[2]  | 0x20) == 'n'
+            && (name[3]  | 0x20) == 't'
+            && (name[4]  | 0x20) == 'e'
+            && (name[5]  | 0x20) == 'n'
+            && (name[6]  | 0x20) == 't'
+            && name[7]           == '-'
+            && (name[8]  | 0x20) == 'l'
+            && (name[9]  | 0x20) == 'e'
+            && (name[10] | 0x20) == 'n'
+            && (name[11] | 0x20) == 'g'
+            && (name[12] | 0x20) == 't'
+            && (name[13] | 0x20) == 'h';
 
     /// <summary>
     /// Validates Content-Length value: 1*DIGIT with optional comma-separated duplicates

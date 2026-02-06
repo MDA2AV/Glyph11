@@ -55,7 +55,7 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
                     {
                         if (!RequestParser.TryParse(sequence, request, out var bytesRead))
                             break; // Need more data
-
+                        
                         // Build and send response
                         var path = Encoding.ASCII.GetString(request.Raw.Path.Span);
                         var method = request.Method;

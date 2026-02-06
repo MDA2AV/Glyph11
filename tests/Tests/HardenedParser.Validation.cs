@@ -309,10 +309,87 @@ public partial class HardenedParserTests
     [Theory]
     [InlineData("0", false), InlineData("0", true)]
     [InlineData("42", false), InlineData("42", true)]
+    [InlineData("123456789", false), InlineData("123456789", true)]
     public void AcceptsValidContentLength(string value, bool multi)
     {
         var (ok, _) = Parse($"GET / HTTP/1.1\r\nContent-Length: {value}\r\n\r\n", multi);
         Assert.True(ok);
         AssertHeader(_request.Headers, 0, "Content-Length", value);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AcceptsValidContentLength_CommaSeparated(bool multi)
+    {
+        var (ok, _) = Parse("GET / HTTP/1.1\r\nContent-Length: 42, 42\r\n\r\n", multi);
+        Assert.True(ok);
+        AssertHeader(_request.Headers, 0, "Content-Length", "42, 42");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AcceptsValidContentLength_CommaSeparatedZeros(bool multi)
+    {
+        var (ok, _) = Parse("GET / HTTP/1.1\r\nContent-Length: 0, 0\r\n\r\n", multi);
+        Assert.True(ok);
+        AssertHeader(_request.Headers, 0, "Content-Length", "0, 0");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AcceptsValidContentLength_MixedCaseHeader(bool multi)
+    {
+        var (ok, _) = Parse("GET / HTTP/1.1\r\ncontent-LENGTH: 10\r\n\r\n", multi);
+        Assert.True(ok);
+        AssertHeader(_request.Headers, 0, "content-LENGTH", "10");
+    }
+
+    [Theory]
+    [InlineData("00", false), InlineData("00", true)]
+    [InlineData("01", false), InlineData("01", true)]
+    public void Throws_ContentLengthDoubleZero(string value, bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse($"GET / HTTP/1.1\r\nContent-Length: {value}\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ContentLengthTrailingComma(bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: 42,\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ContentLengthCommaOnly(bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: ,\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ContentLengthLeadingZeroInCommaSeparated(bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DoesNotValidateNonContentLengthHeader(bool multi)
+    {
+        // A 14-char header that isn't Content-Length should not trigger CL validation
+        var (ok, _) = Parse("GET / HTTP/1.1\r\nAccept-Charset: whatever\r\n\r\n", multi);
+        Assert.True(ok);
     }
 }
