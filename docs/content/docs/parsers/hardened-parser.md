@@ -43,6 +43,8 @@ The HardenedParser enforces the following on every request:
 
 - Method must contain only valid RFC 9110 Section 5.6.2 token characters (`A-Z`, `a-z`, `0-9`, `` !#$%&'*+-.^_`|~ ``)
 - Method length must not exceed `MaxMethodLength`
+- Multiple spaces between request-line components are rejected — RFC 9112 Section 3
+- Request-target must not contain control characters (0x00-0x1F, 0x7F) — RFC 9112 Section 3.2
 - URL length must not exceed `MaxUrlLength`
 - HTTP version must match the format `HTTP/X.Y` (exactly 8 bytes, digits at positions 5 and 7)
 - Query parameter count must not exceed `MaxQueryParameterCount`
