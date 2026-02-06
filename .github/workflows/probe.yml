@@ -35,18 +35,17 @@ jobs:
 
     - name: Start GlyphServer
       run: |
-        dotnet run --no-build -c Release --project src/Servers/GlyphServer -- 9001 &
+        dotnet run -c Release --project src/Servers/GlyphServer -- 9001 &
         echo $! > glyph.pid
 
     - name: Start Kestrel (AspNetMinimal)
       run: |
-        ASPNETCORE_URLS=http://localhost:9002 \
-          dotnet run --no-build -c Release --project src/Servers/AspNetMinimal &
+        dotnet run -c Release --project src/Servers/AspNetMinimal &
         echo $! > kestrel.pid
 
     - name: Start GenHTTP (GenHTTPMinimal)
       run: |
-        dotnet run --no-build -c Release --project src/Servers/GenHTTPMinimal &
+        dotnet run -c Release --project src/Servers/GenHTTPMinimal &
         echo $! > genhttp.pid
 
     - name: Wait for servers
@@ -62,24 +61,33 @@ jobs:
           echo "::warning::$name did not start in time"
         }
         wait_for "GlyphServer" "http://localhost:9001/"
-        wait_for "Kestrel"     "http://localhost:9002/"
+        wait_for "Kestrel"     "http://localhost:5099/"
         wait_for "GenHTTP"     "http://localhost:8080/"
+
+    - name: Verify servers
+      run: |
+        echo "── Listening ports ──"
+        ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null || true
+        echo "── Health checks ──"
+        curl -sf http://localhost:9001/ && echo " GlyphServer OK" || echo " GlyphServer FAIL"
+        curl -sf http://localhost:5099/ && echo " Kestrel OK"     || echo " Kestrel FAIL"
+        curl -sf http://localhost:8080/ && echo " GenHTTP OK"     || echo " GenHTTP FAIL"
 
     # ── Run probe against each server ──────────────────────────────────
 
     - name: Probe GlyphServer
       run: |
-        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 9001 --output probe-glyph.json || true
 
     - name: Probe Kestrel
       run: |
-        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
-          --host localhost --port 9002 --output probe-kestrel.json || true
+        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 5099 --output probe-kestrel.json || true
 
     - name: Probe GenHTTP
       run: |
-        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 8080 --output probe-genhttp.json || true
 
     # ── Stop all servers ───────────────────────────────────────────────
