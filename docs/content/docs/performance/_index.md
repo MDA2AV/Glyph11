@@ -16,6 +16,6 @@ For detailed benchmark results, allocation tracking, and trend charts, see the [
 ## Running Benchmarks
 
 ```bash
-cd src/Benchmarks
+cd Benchmarks
 dotnet run -c Release
 ```

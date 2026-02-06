@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Examples\GenHTTP\GenHTTP.csproj" />
-      <ProjectReference Include="..\Glyph11\Glyph11.csproj" />
+      <ProjectReference Include="..\src\Examples\GenHTTP\GenHTTP.csproj" />
+      <ProjectReference Include="..\src\Glyph11\Glyph11.csproj" />
     </ItemGroup>
 
     <ItemGroup>
