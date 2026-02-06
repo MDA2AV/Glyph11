@@ -87,7 +87,7 @@ To publish updated benchmark data:
 
 The **Probe** workflow (`.github/workflows/probe.yml`) tests HTTP/1.1 compliance across multiple server frameworks using [Glyph11.Probe](src/Glyph11.Probe), a tool that sends malformed and ambiguous HTTP requests and checks the server's response against strict RFC 9110/9112 expectations.
 
-Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **Flask** (Python), **Express** (Node.js), **Spring Boot** (Java).
+Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **Flask** (Python), **Express** (Node.js), **Spring Boot** (Java), **Quarkus** (Java), **Nancy** (.NET), **Jetty** (Java), **Nginx** (native), **Apache** (native), **Caddy** (native).
 
 | Trigger | What it does |
 |---------|--------------|
