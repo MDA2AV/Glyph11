@@ -5,10 +5,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
 
   parsers:
@@ -16,6 +12,10 @@ jobs:
     name: Parser Benchmarks
 
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
 
