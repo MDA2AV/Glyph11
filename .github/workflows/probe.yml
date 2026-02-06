@@ -28,31 +28,66 @@ jobs:
       with:
         dotnet-version: 10.0
 
-    - name: Build
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+
+    - name: Build .NET
       run: dotnet build src/Glyph11.sln -c Release
+
+    - name: Install Flask
+      run: pip install flask
+
+    - name: Install Express
+      run: npm install --prefix src/Servers/ExpressServer
+
+    - name: Build Spring Boot
+      run: mvn package -q -DskipTests -f src/Servers/SpringBootServer/pom.xml
 
     # ── Start all servers ──────────────────────────────────────────────
 
     - name: Start GlyphServer
       run: |
-        dotnet run -c Release --project src/Servers/GlyphServer -- 9001 &
+        dotnet run --no-build -c Release --project src/Servers/GlyphServer -- 9001 &
         echo $! > glyph.pid
 
     - name: Start Kestrel (AspNetMinimal)
       run: |
-        dotnet run -c Release --project src/Servers/AspNetMinimal &
+        dotnet run --no-build -c Release --project src/Servers/AspNetMinimal &
         echo $! > kestrel.pid
 
-    - name: Start GenHTTP (GenHTTPMinimal)
+    - name: Start Flask
       run: |
-        dotnet run -c Release --project src/Servers/GenHTTPMinimal &
-        echo $! > genhttp.pid
+        python3 src/Servers/FlaskServer/app.py 9002 &
+        echo $! > flask.pid
+
+    - name: Start Express
+      run: |
+        node src/Servers/ExpressServer/server.js 9003 &
+        echo $! > express.pid
+
+    - name: Start Spring Boot
+      run: |
+        java -jar src/Servers/SpringBootServer/target/*.jar --server.port=9004 --server.address=127.0.0.1 &
+        echo $! > spring.pid
 
     - name: Wait for servers
       run: |
         wait_for() {
           local name=$1 url=$2
-          for i in $(seq 1 20); do
+          for i in $(seq 1 30); do
             if curl -sf "$url" > /dev/null 2>&1; then
               echo "$name ready"; return 0
             fi
@@ -60,44 +95,60 @@ jobs:
           done
           echo "::warning::$name did not start in time"
         }
-        wait_for "GlyphServer" "http://localhost:9001/"
-        wait_for "Kestrel"     "http://localhost:5099/"
-        wait_for "GenHTTP"     "http://localhost:8080/"
+        wait_for "GlyphServer"  "http://localhost:9001/"
+        wait_for "Kestrel"      "http://localhost:5099/"
+        wait_for "Flask"        "http://localhost:9002/"
+        wait_for "Express"      "http://localhost:9003/"
+        wait_for "Spring Boot"  "http://localhost:9004/"
 
     - name: Verify servers
       run: |
         echo "── Listening ports ──"
         ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null || true
         echo "── Health checks ──"
-        curl -sf http://localhost:9001/ && echo " GlyphServer OK" || echo " GlyphServer FAIL"
-        curl -sf http://localhost:5099/ && echo " Kestrel OK"     || echo " Kestrel FAIL"
-        curl -sf http://localhost:8080/ && echo " GenHTTP OK"     || echo " GenHTTP FAIL"
+        curl -sf http://localhost:9001/ && echo " GlyphServer OK"  || echo " GlyphServer FAIL"
+        curl -sf http://localhost:5099/ && echo " Kestrel OK"      || echo " Kestrel FAIL"
+        curl -sf http://localhost:9002/ && echo " Flask OK"        || echo " Flask FAIL"
+        curl -sf http://localhost:9003/ && echo " Express OK"      || echo " Express FAIL"
+        curl -sf http://localhost:9004/ && echo " Spring Boot OK"  || echo " Spring Boot FAIL"
 
     # ── Run probe against each server ──────────────────────────────────
 
     - name: Probe GlyphServer
       run: |
-        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 9001 --output probe-glyph.json || true
 
     - name: Probe Kestrel
       run: |
-        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 5099 --output probe-kestrel.json || true
 
-    - name: Probe GenHTTP
+    - name: Probe Flask
       run: |
-        dotnet run -c Release --project src/Glyph11.Probe.Cli -- \
-          --host localhost --port 8080 --output probe-genhttp.json || true
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9002 --output probe-flask.json || true
+
+    - name: Probe Express
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9003 --output probe-express.json || true
+
+    - name: Probe Spring Boot
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9004 --output probe-spring.json || true
 
     # ── Stop all servers ───────────────────────────────────────────────
 
     - name: Stop servers
       if: always()
       run: |
-        kill $(cat glyph.pid)  2>/dev/null || true
+        kill $(cat glyph.pid)   2>/dev/null || true
         kill $(cat kestrel.pid) 2>/dev/null || true
-        kill $(cat genhttp.pid) 2>/dev/null || true
+        kill $(cat flask.pid)   2>/dev/null || true
+        kill $(cat express.pid) 2>/dev/null || true
+        kill $(cat spring.pid)  2>/dev/null || true
 
     # ── Process results ────────────────────────────────────────────────
 
@@ -112,62 +163,62 @@ jobs:
                 'accept': list(range(200, 300)),
                 'close_ok': False, 'timeout_ok': False,
                 'expected': '2xx',
-                'reason': 'Baseline connectivity \u2014 valid GET must receive 2xx'
+                'reason': 'Baseline connectivity — valid GET must receive 2xx'
             },
             'RFC9112-2.2-BARE-LF-REQUEST-LINE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Bare LF in request-line is a framing violation (RFC 9112 \u00a72.2)'
+                'reason': 'Bare LF in request-line is a framing violation (RFC 9112 §2.2)'
             },
             'RFC9112-2.2-BARE-LF-HEADER': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Bare LF in header field is a framing violation (RFC 9112 \u00a72.2)'
+                'reason': 'Bare LF in header field is a framing violation (RFC 9112 §2.2)'
             },
             'RFC9112-5.1-OBS-FOLD': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Obs-fold (line folding) is deprecated and must be rejected (RFC 9112 \u00a75.1)'
+                'reason': 'Obs-fold (line folding) is deprecated and must be rejected (RFC 9112 §5.1)'
             },
             'RFC9110-5.6.2-SP-BEFORE-COLON': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Space between header name and colon is invalid (RFC 9110 \u00a75.6.2)'
+                'reason': 'Space between header name and colon is invalid (RFC 9110 §5.6.2)'
             },
             'RFC9112-3-MULTI-SP-REQUEST-LINE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Multiple SP in request-line is malformed (RFC 9112 \u00a73)'
+                'reason': 'Multiple SP in request-line is malformed (RFC 9112 §3)'
             },
             'RFC9112-7.1-MISSING-HOST': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Missing Host header requires 400 (RFC 9112 \u00a77.1)'
+                'reason': 'Missing Host header requires 400 (RFC 9112 §7.1)'
             },
             'RFC9112-2.3-INVALID-VERSION': {
                 'accept': [400, 505], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400/505 or close',
-                'reason': 'Invalid HTTP version must be rejected (RFC 9112 \u00a72.3)'
+                'reason': 'Invalid HTTP version must be rejected (RFC 9112 §2.3)'
             },
             'RFC9112-5-EMPTY-HEADER-NAME': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Empty header name (leading colon) is invalid (RFC 9112 \u00a75)'
+                'reason': 'Empty header name (leading colon) is invalid (RFC 9112 §5)'
             },
             'RFC9112-3-CR-ONLY-LINE-ENDING': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'CR without LF is a framing violation (RFC 9112 \u00a72.2)'
+                'reason': 'CR without LF is a framing violation (RFC 9112 §2.2)'
             },
             'SMUG-CL-TE-BOTH': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'CL + TE together enables smuggling \u2014 must reject (RFC 9112 \u00a76.1)'
+                'reason': 'CL + TE together enables smuggling — must reject (RFC 9112 §6.1)'
             },
             'SMUG-DUPLICATE-CL': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Conflicting Content-Length values enable smuggling (RFC 9110 \u00a78.6)'
+                'reason': 'Conflicting Content-Length values enable smuggling (RFC 9110 §8.6)'
             },
             'SMUG-CL-LEADING-ZEROS': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
@@ -177,17 +228,17 @@ jobs:
             'SMUG-TE-XCHUNKED': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Unknown TE "xchunked" with CL present is ambiguous \u2014 must reject'
+                'reason': 'Unknown TE "xchunked" with CL present is ambiguous — must reject'
             },
             'SMUG-TE-TRAILING-SPACE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'TE "chunked " (trailing space) is obfuscation \u2014 must reject'
+                'reason': 'TE "chunked " (trailing space) is obfuscation — must reject'
             },
             'SMUG-TE-SP-BEFORE-COLON': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Space before colon is invalid header syntax (RFC 9110 \u00a75.6.2)'
+                'reason': 'Space before colon is invalid header syntax (RFC 9110 §5.6.2)'
             },
             'SMUG-CL-NEGATIVE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
@@ -197,12 +248,12 @@ jobs:
             'SMUG-CLTE-PIPELINE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'CL.TE smuggling vector \u2014 ambiguous framing must be rejected'
+                'reason': 'CL.TE smuggling vector — ambiguous framing must be rejected'
             },
             'MAL-BINARY-GARBAGE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': True,
                 'expected': '400/close/timeout',
-                'reason': 'Binary garbage is not valid HTTP \u2014 must reject'
+                'reason': 'Binary garbage is not valid HTTP — must reject'
             },
             'MAL-LONG-URL': {
                 'accept': [400, 414, 431], 'close_ok': True, 'timeout_ok': False,
@@ -227,17 +278,17 @@ jobs:
             'MAL-CONTROL-CHARS-HEADER': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
                 'expected': '400 or close',
-                'reason': 'Control characters in header values are invalid (RFC 9110 \u00a75.5)'
+                'reason': 'Control characters in header values are invalid (RFC 9110 §5.5)'
             },
             'MAL-INCOMPLETE-REQUEST': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': True,
                 'expected': '400/close/timeout',
-                'reason': 'Incomplete request \u2014 server must not crash, may timeout'
+                'reason': 'Incomplete request — server must not crash, may timeout'
             },
             'MAL-EMPTY-REQUEST': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': True,
                 'expected': '400/close/timeout',
-                'reason': 'Empty request \u2014 server must not crash, may timeout'
+                'reason': 'Empty request — server must not crash, may timeout'
             },
         }
 
@@ -262,7 +313,7 @@ jobs:
                 )
                 got     = str(status) if status is not None else conn
                 verdict = 'Pass' if passed else 'Fail'
-                reason  = spec['reason'] if passed else f"Expected {spec['expected']}, got {got} \u2014 {spec['reason']}"
+                reason  = spec['reason'] if passed else f"Expected {spec['expected']}, got {got} — {spec['reason']}"
 
                 results.append({
                     'id': tid, 'description': r['description'],
@@ -279,9 +330,11 @@ jobs:
 
         # ── Process each server ──────────────────────────────────────
         SERVERS = [
-            ('Glyph11', 'probe-glyph.json'),
-            ('Kestrel', 'probe-kestrel.json'),
-            ('GenHTTP', 'probe-genhttp.json'),
+            ('Glyph11',     'probe-glyph.json'),
+            ('Kestrel',     'probe-kestrel.json'),
+            ('Flask',       'probe-flask.json'),
+            ('Express',     'probe-express.json'),
+            ('Spring Boot', 'probe-spring.json'),
         ]
 
         commit_id   = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
@@ -311,7 +364,7 @@ jobs:
             f.write('window.PROBE_DATA = ' + json.dumps(output) + ';')
 
         # ── Write PR comment ─────────────────────────────────────────
-        lines = ['<!-- glyph11-probe-results -->', '## Glyph11 Probe \u2014 Compliance Comparison', '']
+        lines = ['<!-- glyph11-probe-results -->', '## Glyph11 Probe — Compliance Comparison', '']
 
         # Summary badges
         badges = []
@@ -349,9 +402,9 @@ jobs:
                 for n in names:
                     r = lookup[n].get(tid)
                     if not r:
-                        cells.append('\u2014')
+                        cells.append('—')
                     else:
-                        icon = '\u2705' if r['verdict'] == 'Pass' else '\u274c'
+                        icon = '✅' if r['verdict'] == 'Pass' else '❌'
                         cells.append(f"{icon} {r['got']}")
                 row_cells = ' | '.join(cells)
                 lines.append(f"| `{tid}` | {expected} | {row_cells} | {reason} |")

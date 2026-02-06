@@ -11,7 +11,7 @@ HTTP/1.1 compliance comparison across frameworks. Each test sends a specific mal
 <div id="probe-summary"><p><em>Loading probe data...</em></p></div>
 
 {{< callout type="info" >}}
-These results are from CI runs (`ubuntu-latest`). Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **GenHTTP**.
+These results are from CI runs (`ubuntu-latest`). Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **Flask** (Python), **Express** (Node.js), **Spring Boot** (Java).
 {{< /callout >}}
 
 ## Compliance
