@@ -24,10 +24,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET SDK
+      - name: Setup .NET SDKs
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 10.0
+          dotnet-version: |
+            8.0
+            9.0
+            10.0
 
       - name: Setup NuGet CLI
         uses: NuGet/setup-nuget@323ab0502cd38fdc493335025a96c8fdb0edc71f # v2
