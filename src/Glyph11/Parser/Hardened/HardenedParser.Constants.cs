@@ -157,6 +157,22 @@ public static partial class HardenedParser
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsDigit(byte b) => (uint)(b - '0') <= 9;
 
+    /// <summary>
+    /// Validates that a request-target contains no control characters (0x00-0x1F, 0x7F).
+    /// RFC 9112 §3.2 — request-target must only contain VCHAR and unreserved/reserved URI chars.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsValidRequestTarget(ReadOnlySpan<byte> span)
+    {
+        for (int i = 0; i < span.Length; i++)
+        {
+            byte b = span[i];
+            if (b <= 0x1F || b == 0x7F)
+                return false;
+        }
+        return true;
+    }
+
     // ---- Validation helpers (ReadOnlySequence) ----
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

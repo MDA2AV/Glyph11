@@ -1000,4 +1000,418 @@ public class HardenedParserTests : IDisposable
     }
 
     #endregion
+
+    // ================================================================
+    // Parse-time security checks
+    // ================================================================
+
+    #region Bare LF rejection
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_BareLfInHeaderSection(bool multi)
+    {
+        // Mix bare LF with CRLF — should throw
+        var bytes = "GET / HTTP/1.1\r\nHost: x\r\n"u8.ToArray();
+        // Replace the CRLF between headers with bare LF: inject \n after Host line
+        var raw = "GET / HTTP/1.1\r\nHost: x\nX-Bad: y\r\n\r\n";
+        // The bare LF is at position after "Host: x" — but since \r\n\r\n won't be found
+        // with bare LF, we need the actual header to end with \r\n\r\n
+        // Construct bytes manually: request-line CRLF, header with bare LF, then CRLF CRLF
+        var data = new byte[] { };
+        var header = "GET / HTTP/1.1\r\n"u8.ToArray();
+        var badLine = "Host: x\n"u8.ToArray(); // bare LF
+        var goodLine = "X-Ok: y\r\n"u8.ToArray();
+        var terminator = "\r\n"u8.ToArray();
+        var all = new byte[header.Length + badLine.Length + goodLine.Length + terminator.Length];
+        header.CopyTo(all, 0);
+        badLine.CopyTo(all, header.Length);
+        goodLine.CopyTo(all, header.Length + badLine.Length);
+        terminator.CopyTo(all, header.Length + badLine.Length + goodLine.Length);
+
+        // This contains \r\n\r\n at the end, so headerEnd will be found,
+        // but the bare LF scan will catch the \n in "Host: x\n"
+        ReadOnlyMemory<byte> rom = all;
+        Assert.Throws<InvalidOperationException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _));
+    }
+
+    #endregion
+
+    #region Obs-fold rejection
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ObsFoldWithSpace(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET / HTTP/1.1\r\nHost: x\r\n continued\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ObsFoldWithTab(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET / HTTP/1.1\r\nHost: x\r\n\tcontinued\r\n\r\n", multi));
+    }
+
+    #endregion
+
+    #region Whitespace before colon rejection
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_SpaceBeforeColon(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET / HTTP/1.1\r\nHost : localhost\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_TabBeforeColon(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET / HTTP/1.1\r\nHost\t: localhost\r\n\r\n", multi));
+    }
+
+    #endregion
+
+    #region Multiple spaces in request line
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_DoubleSpaceAfterMethod(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET  / HTTP/1.1\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_DoubleSpaceBeforeVersion(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET /  HTTP/1.1\r\n\r\n", multi));
+    }
+
+    #endregion
+
+    #region Request-target control character rejection
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_NullByteInUrl(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET /path\x00evil HTTP/1.1\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ControlCharInUrl(bool multi)
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => Parse("GET /path\x01evil HTTP/1.1\r\n\r\n", multi));
+    }
+
+    #endregion
+
+    // ================================================================
+    // Post-parse semantic checks (new)
+    // ================================================================
+
+    #region HasInvalidHostHeaderCount
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ValidHostCount(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidHostHeaderCount(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_MissingHost(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nAccept: */*\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidHostHeaderCount(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_DuplicateHost(bool multi)
+    {
+        var raw = "GET / HTTP/1.1\r\nHost: a.com\r\nHost: b.com\r\n\r\n";
+        Parse(raw, multi);
+        Assert.True(RequestSemantics.HasInvalidHostHeaderCount(_request));
+    }
+
+    #endregion
+
+    #region HasInvalidContentLengthFormat
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ValidContentLength(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 42\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidContentLengthFormat(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NonDigitContentLength(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: abc\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_EmptyContentLength(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length:\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ContentLengthWithSpaces(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 1 2\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+    }
+
+    #endregion
+
+    #region HasContentLengthWithLeadingZeros
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoLeadingZeros(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 200\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_LeadingZeros(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 0200\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_SingleZeroIsValid(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 0\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
+    }
+
+    #endregion
+
+    #region HasConflictingCommaSeparatedContentLength
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_CommaSeparatedCL_Same(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 42, 42\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasConflictingCommaSeparatedContentLength(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_CommaSeparatedCL_Different(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nContent-Length: 42, 0\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasConflictingCommaSeparatedContentLength(_request));
+    }
+
+    #endregion
+
+    #region HasFragmentInRequestTarget
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoFragment(bool multi)
+    {
+        Parse("GET /path HTTP/1.1\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasFragmentInRequestTarget(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HasFragment(bool multi)
+    {
+        Parse("GET /path#frag HTTP/1.1\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasFragmentInRequestTarget(_request));
+    }
+
+    #endregion
+
+    #region HasBackslashInPath
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoBackslash(bool multi)
+    {
+        Parse("GET /api/users HTTP/1.1\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasBackslashInPath(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HasBackslash(bool multi)
+    {
+        Parse("GET /api\\..\\etc HTTP/1.1\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasBackslashInPath(_request));
+    }
+
+    #endregion
+
+    #region HasDoubleEncoding
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoDoubleEncoding(bool multi)
+    {
+        Parse("GET /api/%2e%2e HTTP/1.1\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasDoubleEncoding(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HasDoubleEncoding(bool multi)
+    {
+        Parse("GET /api/%252e%252e HTTP/1.1\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasDoubleEncoding(_request));
+    }
+
+    #endregion
+
+    #region HasEncodedNullByte
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoEncodedNull(bool multi)
+    {
+        Parse("GET /file.txt HTTP/1.1\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasEncodedNullByte(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HasEncodedNull(bool multi)
+    {
+        Parse("GET /file.txt%00.jpg HTTP/1.1\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasEncodedNullByte(_request));
+    }
+
+    #endregion
+
+    #region HasOverlongUtf8
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoOverlongUtf8(bool multi)
+    {
+        Parse("GET /api/users HTTP/1.1\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasOverlongUtf8(_request));
+    }
+
+    [Fact]
+    public void Semantics_HasOverlongUtf8_C0()
+    {
+        // 0xC0 0xAF is overlong encoding of '/'
+        var header = "GET "u8.ToArray();
+        var path = new byte[] { 0x2F, 0xC0, 0xAF };
+        var tail = " HTTP/1.1\r\n\r\n"u8.ToArray();
+        var all = new byte[header.Length + path.Length + tail.Length];
+        header.CopyTo(all, 0);
+        path.CopyTo(all, header.Length);
+        tail.CopyTo(all, header.Length + path.Length);
+
+        ReadOnlyMemory<byte> rom = all;
+        HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _);
+        Assert.True(RequestSemantics.HasOverlongUtf8(_request));
+    }
+
+    #endregion
+
+    #region HasInvalidTransferEncoding
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ValidTE_Chunked(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidTransferEncoding(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_InvalidTE_Obfuscated(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nTransfer-Encoding: xchunked\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidTransferEncoding(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_InvalidTE_Quoted(bool multi)
+    {
+        // "chunked" (quoted) is not valid
+        Parse("GET / HTTP/1.1\r\nTransfer-Encoding: \"chunked\"\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidTransferEncoding(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NoTE_NotInvalid(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: x\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidTransferEncoding(_request));
+    }
+
+    #endregion
 }

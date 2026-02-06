@@ -24,6 +24,14 @@ public static partial class HardenedParser
         if (totalHeaderBytes > limits.MaxTotalHeaderBytes)
             throw new InvalidOperationException("Total header size exceeds limit.");
 
+        // ---- Reject bare LF (0x0A without preceding 0x0D) — RFC 9112 §2.2 ----
+        var headerSection = span[..totalHeaderBytes];
+        for (int i = 0; i < headerSection.Length; i++)
+        {
+            if (headerSection[i] == (byte)'\n' && (i == 0 || headerSection[i - 1] != (byte)'\r'))
+                throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
+        }
+
         // ---- Request line: METHOD SP URL SP VERSION CRLF ----
 
         int requestLineEnd = span.IndexOf(Crlf);
@@ -42,6 +50,13 @@ public static partial class HardenedParser
 
         int secondSpace = firstSpace + 1 + secondSpaceRel;
 
+        // ---- Reject multiple spaces in request line — RFC 9112 §3 ----
+        // After the method, only one SP is allowed before the URL, and one before the version.
+        if (secondSpace > firstSpace + 1 && requestLine[firstSpace + 1] == Space)
+            throw new InvalidOperationException("Multiple spaces in request line.");
+        if (secondSpace + 1 < requestLine.Length && requestLine[secondSpace + 1] == Space)
+            throw new InvalidOperationException("Multiple spaces in request line.");
+
         // --- Method ---
         var methodSpan = requestLine[..firstSpace];
         if (methodSpan.Length == 0 || methodSpan.Length > limits.MaxMethodLength)
@@ -58,6 +73,10 @@ public static partial class HardenedParser
             throw new InvalidOperationException("URL length exceeds limit.");
 
         var urlSpan = requestLine.Slice(urlStart, urlLen);
+
+        // --- Validate request-target for control characters (NUL, etc.) ---
+        if (!IsValidRequestTarget(urlSpan))
+            throw new InvalidOperationException("Request-target contains invalid characters.");
 
         // --- Version ---
         var versionSpan = requestLine[(secondSpace + 1)..];
@@ -121,12 +140,21 @@ public static partial class HardenedParser
                 break;
 
             var line = span.Slice(lineStart, lineLen);
+
+            // ---- Reject obs-fold (line starting with SP/HTAB) — RFC 9112 §5.2 ----
+            if (line[0] == (byte)' ' || line[0] == (byte)'\t')
+                throw new InvalidOperationException("Obsolete line folding (obs-fold) is not allowed.");
+
             int colon = line.IndexOf(Colon);
 
             if (colon <= 0)
                 throw new InvalidOperationException(colon == 0
                     ? "Header name is empty."
                     : "Malformed header line: missing colon.");
+
+            // ---- Reject whitespace between field-name and colon — RFC 9112 §5.1 ----
+            if (line[colon - 1] == (byte)' ' || line[colon - 1] == (byte)'\t')
+                throw new InvalidOperationException("Whitespace between header name and colon is not allowed.");
 
             // Validate header name
             var nameSpan = line[..colon];

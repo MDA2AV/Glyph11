@@ -10,6 +10,8 @@ public static class RequestSemantics
 {
     private static ReadOnlySpan<byte> ContentLengthName => "content-length"u8;
     private static ReadOnlySpan<byte> TransferEncodingName => "transfer-encoding"u8;
+    private static ReadOnlySpan<byte> HostName => "host"u8;
+    private static ReadOnlySpan<byte> ChunkedValue => "chunked"u8;
 
     /// <summary>
     /// Returns true if the request has multiple Content-Length headers with differing values.
@@ -104,6 +106,258 @@ public static class RequestSemantics
                 return true;
 
             i++;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the request does not have exactly one Host header.
+    /// (RFC 9112 §3.2 — HTTP/1.1 requires exactly one Host header)
+    /// </summary>
+    public static bool HasInvalidHostHeaderCount(BinaryRequest request)
+    {
+        var headers = request.Headers;
+        int count = 0;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (AsciiEqualsIgnoreCase(headers[i].Key.Span, HostName))
+                count++;
+        }
+
+        return count != 1;
+    }
+
+    /// <summary>
+    /// Returns true if any Content-Length header value contains non-digit characters.
+    /// (RFC 9110 §8.6 — Content-Length = 1*DIGIT)
+    /// </summary>
+    public static bool HasInvalidContentLengthFormat(BinaryRequest request)
+    {
+        var headers = request.Headers;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, ContentLengthName))
+                continue;
+
+            var value = headers[i].Value.Span;
+            if (value.Length == 0)
+                return true;
+
+            for (int j = 0; j < value.Length; j++)
+            {
+                byte b = value[j];
+                // Allow digits and comma+OWS for RFC 9112 §6.2 comma-separated form
+                if (b == (byte)',')
+                {
+                    // Skip OWS after comma
+                    while (j + 1 < value.Length && (value[j + 1] == (byte)' ' || value[j + 1] == (byte)'\t'))
+                        j++;
+                    continue;
+                }
+                if (b < (byte)'0' || b > (byte)'9')
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if any Content-Length header value has leading zeros (e.g. "0200").
+    /// Leading zeros can cause octal interpretation confusion in some parsers.
+    /// </summary>
+    public static bool HasContentLengthWithLeadingZeros(BinaryRequest request)
+    {
+        var headers = request.Headers;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, ContentLengthName))
+                continue;
+
+            var value = headers[i].Value.Span;
+            if (HasLeadingZerosInValue(value))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasLeadingZerosInValue(ReadOnlySpan<byte> value)
+    {
+        // Check each comma-separated segment
+        int start = 0;
+        while (start < value.Length)
+        {
+            // Skip OWS
+            while (start < value.Length && (value[start] == (byte)' ' || value[start] == (byte)'\t'))
+                start++;
+
+            // Find end of this segment
+            int end = start;
+            while (end < value.Length && value[end] != (byte)',')
+                end++;
+
+            int segLen = end - start;
+            if (segLen > 1 && value[start] == (byte)'0')
+                return true;
+
+            start = end + 1;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if a single Content-Length header value contains comma-separated values
+    /// that are not all identical. (RFC 9112 §6.2 — smuggling vector)
+    /// </summary>
+    public static bool HasConflictingCommaSeparatedContentLength(BinaryRequest request)
+    {
+        var headers = request.Headers;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, ContentLengthName))
+                continue;
+
+            var value = headers[i].Value.Span;
+            if (value.IndexOf((byte)',') < 0)
+                continue;
+
+            // Split on commas, compare all segments
+            ReadOnlySpan<byte> firstSegment = default;
+            int start = 0;
+            while (start < value.Length)
+            {
+                // Skip OWS
+                while (start < value.Length && (value[start] == (byte)' ' || value[start] == (byte)'\t'))
+                    start++;
+
+                int end = start;
+                while (end < value.Length && value[end] != (byte)',')
+                    end++;
+
+                // Trim trailing OWS
+                int trimEnd = end;
+                while (trimEnd > start && (value[trimEnd - 1] == (byte)' ' || value[trimEnd - 1] == (byte)'\t'))
+                    trimEnd--;
+
+                var segment = value[start..trimEnd];
+
+                if (firstSegment.Length == 0)
+                    firstSegment = segment;
+                else if (!segment.SequenceEqual(firstSegment))
+                    return true;
+
+                start = end + 1;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the request-target contains a fragment indicator (#).
+    /// Fragments must not appear in HTTP request-targets (RFC 9112 §3.2).
+    /// </summary>
+    public static bool HasFragmentInRequestTarget(BinaryRequest request)
+    {
+        return request.Path.Span.IndexOf((byte)'#') >= 0;
+    }
+
+    /// <summary>
+    /// Returns true if the request path contains backslash characters.
+    /// Backslashes can be used for path traversal on Windows systems.
+    /// </summary>
+    public static bool HasBackslashInPath(BinaryRequest request)
+    {
+        return request.Path.Span.IndexOf((byte)'\\') >= 0;
+    }
+
+    /// <summary>
+    /// Returns true if the request path contains double-encoded characters (%25).
+    /// Double encoding can bypass security filters that only decode once.
+    /// </summary>
+    public static bool HasDoubleEncoding(BinaryRequest request)
+    {
+        var path = request.Path.Span;
+        for (int i = 0; i < path.Length - 2; i++)
+        {
+            if (path[i] == (byte)'%' && path[i + 1] == (byte)'2' && path[i + 2] == (byte)'5')
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the request path contains a percent-encoded null byte (%00).
+    /// Null bytes can cause path truncation in C-based file systems.
+    /// </summary>
+    public static bool HasEncodedNullByte(BinaryRequest request)
+    {
+        var path = request.Path.Span;
+        for (int i = 0; i < path.Length - 2; i++)
+        {
+            if (path[i] == (byte)'%' && path[i + 1] == (byte)'0' && path[i + 2] == (byte)'0')
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the request path contains overlong UTF-8 sequences.
+    /// Overlong encodings (e.g. 0xC0 0xAF for '/') can bypass ASCII path checks.
+    /// (RFC 3629 §3 — overlong sequences are forbidden)
+    /// </summary>
+    public static bool HasOverlongUtf8(BinaryRequest request)
+    {
+        var path = request.Path.Span;
+        for (int i = 0; i < path.Length; i++)
+        {
+            byte b = path[i];
+            // 0xC0 and 0xC1 always produce overlong 2-byte sequences
+            if (b == 0xC0 || b == 0xC1)
+                return true;
+            // 0xE0 followed by < 0xA0 is overlong 3-byte
+            if (b == 0xE0 && i + 1 < path.Length && path[i + 1] < 0xA0)
+                return true;
+            // 0xF0 followed by < 0x90 is overlong 4-byte
+            if (b == 0xF0 && i + 1 < path.Length && path[i + 1] < 0x90)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if a Transfer-Encoding header value is present but does not
+    /// equal "chunked" (after trimming OWS and case-insensitive comparison).
+    /// Obfuscated TE values are a smuggling vector (RFC 9112 §6.1).
+    /// </summary>
+    public static bool HasInvalidTransferEncoding(BinaryRequest request)
+    {
+        var headers = request.Headers;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, TransferEncodingName))
+                continue;
+
+            var value = headers[i].Value.Span;
+
+            // Trim OWS
+            int start = 0;
+            while (start < value.Length && (value[start] == (byte)' ' || value[start] == (byte)'\t'))
+                start++;
+            int end = value.Length;
+            while (end > start && (value[end - 1] == (byte)' ' || value[end - 1] == (byte)'\t'))
+                end--;
+
+            var trimmed = value[start..end];
+            if (!AsciiEqualsIgnoreCase(trimmed, ChunkedValue))
+                return true;
         }
 
         return false;
