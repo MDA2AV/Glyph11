@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770392060704,
+  "lastUpdate": 1770393442995,
   "repoUrl": "https://github.com/MDA2AV/Glyph11",
   "entries": {
     "Benchmark": [
@@ -750,6 +750,370 @@ window.BENCHMARK_DATA = {
             "value": 294.58448600769043,
             "unit": "ns",
             "range": "± 1.1917772095974222"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "committer": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "id": "d8cec43f3a2635508634b06eea646b2a09e93dbf",
+          "message": "Configure self hosted runner",
+          "timestamp": "2026-02-06T15:45:53Z",
+          "url": "https://github.com/MDA2AV/Glyph11/commit/d8cec43f3a2635508634b06eea646b2a09e93dbf"
+        },
+        "date": 1770393441692,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM",
+            "value": 69.62825834751129,
+            "unit": "ns",
+            "range": "± 0.31892295858874603"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment",
+            "value": 174.07119830449423,
+            "unit": "ns",
+            "range": "± 5.252797316845574"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM",
+            "value": 410.11340649922687,
+            "unit": "ns",
+            "range": "± 2.9853648580874608"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment",
+            "value": 892.8395833969116,
+            "unit": "ns",
+            "range": "± 2.5675410460060077"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM",
+            "value": 3009.2372131347656,
+            "unit": "ns",
+            "range": "± 8.017009679052576"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment",
+            "value": 6388.797032674153,
+            "unit": "ns",
+            "range": "± 13.407892219922386"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM",
+            "value": 92.03591533501942,
+            "unit": "ns",
+            "range": "± 0.06316184047019832"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment",
+            "value": 193.5898011525472,
+            "unit": "ns",
+            "range": "± 0.7190770701821242"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM",
+            "value": 656.5904480616251,
+            "unit": "ns",
+            "range": "± 0.22752423970331298"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment",
+            "value": 1186.3219750722249,
+            "unit": "ns",
+            "range": "± 1.905175932338875"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM",
+            "value": 4823.418673197429,
+            "unit": "ns",
+            "range": "± 1.682614414140525"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment",
+            "value": 8437.153335571289,
+            "unit": "ns",
+            "range": "± 33.415261977529255"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_Small",
+            "value": 6.756760403513908,
+            "unit": "ns",
+            "range": "± 0.10006521264626568"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_4K",
+            "value": 25.046844790379208,
+            "unit": "ns",
+            "range": "± 0.05557128306579852"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_32K",
+            "value": 205.85569135348,
+            "unit": "ns",
+            "range": "± 1.1161717246870635"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_Small",
+            "value": 6.30088593562444,
+            "unit": "ns",
+            "range": "± 0.012373494414914438"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_4K",
+            "value": 29.829446415106457,
+            "unit": "ns",
+            "range": "± 0.20742547315336665"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_32K",
+            "value": 195.88452422618866,
+            "unit": "ns",
+            "range": "± 0.8357068141827214"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_Small",
+            "value": 2.3240538388490677,
+            "unit": "ns",
+            "range": "± 0.04325156152662568"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_4K",
+            "value": 2.5192564154664674,
+            "unit": "ns",
+            "range": "± 0.045351164977687125"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_32K",
+            "value": 2.3984903103361526,
+            "unit": "ns",
+            "range": "± 0.031150837424629697"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_Small",
+            "value": 1.9946874119341373,
+            "unit": "ns",
+            "range": "± 0.0070715716179924485"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_4K",
+            "value": 19.626563598712284,
+            "unit": "ns",
+            "range": "± 0.17508954715558317"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_32K",
+            "value": 154.7800817489624,
+            "unit": "ns",
+            "range": "± 0.23234991863523705"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_Small",
+            "value": 7.5745604286591215,
+            "unit": "ns",
+            "range": "± 0.007221224985561715"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_4K",
+            "value": 18.65872371196747,
+            "unit": "ns",
+            "range": "± 0.01216246237026161"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_32K",
+            "value": 153.18299182256064,
+            "unit": "ns",
+            "range": "± 0.36556993528481724"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_Small",
+            "value": 7.82654511431853,
+            "unit": "ns",
+            "range": "± 0.042013312168097186"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_4K",
+            "value": 18.577295511960983,
+            "unit": "ns",
+            "range": "± 0.0874809656909737"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_32K",
+            "value": 154.10333053270975,
+            "unit": "ns",
+            "range": "± 1.2934593829804615"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_Small",
+            "value": 8.954557567834854,
+            "unit": "ns",
+            "range": "± 0.012414621423622329"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_4K",
+            "value": 25.101424902677536,
+            "unit": "ns",
+            "range": "± 0.25023377490383253"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_32K",
+            "value": 152.73887968063354,
+            "unit": "ns",
+            "range": "± 0.17218736576477592"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_Small",
+            "value": 1.2878567061076562,
+            "unit": "ns",
+            "range": "± 0.010844506091753078"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_4K",
+            "value": 1.2604086895783742,
+            "unit": "ns",
+            "range": "± 0.01934703587964671"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_32K",
+            "value": 1.23577082157135,
+            "unit": "ns",
+            "range": "± 0.00330978149123024"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_Small",
+            "value": 1.2606942902008693,
+            "unit": "ns",
+            "range": "± 0.007575402443450085"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_4K",
+            "value": 1.2593528907746077,
+            "unit": "ns",
+            "range": "± 0.01188551074087536"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_32K",
+            "value": 1.3078795994321506,
+            "unit": "ns",
+            "range": "± 0.030629102350439953"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_Small",
+            "value": 1.1592269216974576,
+            "unit": "ns",
+            "range": "± 0.004086110563591704"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_4K",
+            "value": 1.1780215377608936,
+            "unit": "ns",
+            "range": "± 0.005082854190334958"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_32K",
+            "value": 1.1832713174323242,
+            "unit": "ns",
+            "range": "± 0.02102595546430319"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_Small",
+            "value": 1.1610716941456,
+            "unit": "ns",
+            "range": "± 0.014438318027116155"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_4K",
+            "value": 1.1806265003979206,
+            "unit": "ns",
+            "range": "± 0.008392953738775761"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_32K",
+            "value": 1.162059144427379,
+            "unit": "ns",
+            "range": "± 0.007627792844517675"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_Small",
+            "value": 2.4881476014852524,
+            "unit": "ns",
+            "range": "± 0.01286488673989461"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_4K",
+            "value": 2.4734348182876906,
+            "unit": "ns",
+            "range": "± 0.01953427617718973"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_32K",
+            "value": 2.494041825334231,
+            "unit": "ns",
+            "range": "± 0.0020871702345570805"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_Small",
+            "value": 2.4916337157289186,
+            "unit": "ns",
+            "range": "± 0.0052087644696905185"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_4K",
+            "value": 25.003063837687176,
+            "unit": "ns",
+            "range": "± 0.054267274975370414"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_32K",
+            "value": 153.1688577334086,
+            "unit": "ns",
+            "range": "± 1.9549729853655582"
           },
           {
             "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment.Allocated",
