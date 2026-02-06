@@ -91,7 +91,7 @@ jobs:
 
     if: github.event_name == 'workflow_dispatch'
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     permissions:
       contents: write
@@ -100,11 +100,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Download .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0
 
     - name: Run all benchmarks
       run: dotnet run -c Release -- --filter '*'
