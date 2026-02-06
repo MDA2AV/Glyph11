@@ -45,6 +45,32 @@ jobs:
           src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
           > combined-benchmarks.json
 
+    - name: Add allocation metrics to combined results
+      run: |
+        python3 -c "
+        import json, glob
+        files = glob.glob('src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json')
+        alloc_entries = []
+        for f in files:
+            with open(f) as fh:
+                data = json.load(fh)
+            for b in data.get('Benchmarks', []):
+                alloc = b.get('Memory', {}).get('BytesAllocatedPerOperation', 0)
+                if alloc and alloc > 0:
+                    alloc_entries.append({
+                        'FullName': b['FullName'] + '.Allocated',
+                        'Statistics': {'Mean': float(alloc), 'StandardDeviation': 0.0},
+                        'Namespace': b.get('Namespace', ''),
+                        'Type': b.get('Type', ''),
+                        'Method': b.get('Method', '') + '_Allocated'
+                    })
+        with open('combined-benchmarks.json') as fh:
+            combined = json.load(fh)
+        combined['Benchmarks'].extend(alloc_entries)
+        with open('combined-benchmarks.json', 'w') as fh:
+            json.dump(combined, fh)
+        "
+
     - name: Compare against baseline
       uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1
       with:
@@ -96,6 +122,32 @@ jobs:
         jq -s '{ Benchmarks: [ .[].Benchmarks[] ] }' \
           src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
           > combined-benchmarks.json
+
+    - name: Add allocation metrics to combined results
+      run: |
+        python3 -c "
+        import json, glob
+        files = glob.glob('src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json')
+        alloc_entries = []
+        for f in files:
+            with open(f) as fh:
+                data = json.load(fh)
+            for b in data.get('Benchmarks', []):
+                alloc = b.get('Memory', {}).get('BytesAllocatedPerOperation', 0)
+                if alloc and alloc > 0:
+                    alloc_entries.append({
+                        'FullName': b['FullName'] + '.Allocated',
+                        'Statistics': {'Mean': float(alloc), 'StandardDeviation': 0.0},
+                        'Namespace': b.get('Namespace', ''),
+                        'Type': b.get('Type', ''),
+                        'Method': b.get('Method', '') + '_Allocated'
+                    })
+        with open('combined-benchmarks.json') as fh:
+            combined = json.load(fh)
+        combined['Benchmarks'].extend(alloc_entries)
+        with open('combined-benchmarks.json', 'w') as fh:
+            json.dump(combined, fh)
+        "
 
     - name: Compare and update baseline
       uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1

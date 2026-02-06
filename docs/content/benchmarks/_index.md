@@ -40,6 +40,14 @@ These numbers are from CI runs (`ubuntu-latest`) and may differ from local resul
       : v.toFixed(1);
   }
 
+  function fmtAlloc(name) {
+    const v = val(name + '.Allocated');
+    if (v === null) return '—';
+    if (v === 0) return '0 B';
+    if (v < 1024) return v.toFixed(0) + ' B';
+    return (v / 1024).toFixed(1) + ' KB';
+  }
+
   function makeTable(headers, rows) {
     const hdr = '<tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr>';
     const body = rows.map(r =>
@@ -57,9 +65,13 @@ These numbers are from CI runs (`ubuntu-latest`) and may differ from local resul
   const parserRows = parserSizes.map(([label, rom, ms]) => [
     label,
     fmt(val('Benchmarks.FlexibleParserBenchmark.' + rom)) + ' ns',
+    fmtAlloc('Benchmarks.FlexibleParserBenchmark.' + rom),
     fmt(val('Benchmarks.FlexibleParserBenchmark.' + ms)) + ' ns',
+    fmtAlloc('Benchmarks.FlexibleParserBenchmark.' + ms),
     fmt(val('Benchmarks.HardenedParserBenchmark.' + rom)) + ' ns',
+    fmtAlloc('Benchmarks.HardenedParserBenchmark.' + rom),
     fmt(val('Benchmarks.HardenedParserBenchmark.' + ms)) + ' ns',
+    fmtAlloc('Benchmarks.HardenedParserBenchmark.' + ms),
   ]);
 
   // --- Header-scanning checks ---
@@ -88,7 +100,7 @@ These numbers are from CI runs (`ubuntu-latest`) and may differ from local resul
   container.innerHTML =
     '<h3>Parser Benchmarks</h3>' +
     makeTable(
-      ['Payload', 'FlexibleParser (ROM)', 'FlexibleParser (MultiSeg)', 'HardenedParser (ROM)', 'HardenedParser (MultiSeg)'],
+      ['Payload', 'Flexible (ROM)', 'Alloc', 'Flexible (MultiSeg)', 'Alloc', 'Hardened (ROM)', 'Alloc', 'Hardened (MultiSeg)', 'Alloc'],
       parserRows
     ) +
     '<h3>RequestSemantics — Header-Scanning Checks</h3>' +
