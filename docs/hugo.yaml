@@ -21,12 +21,15 @@ menu:
     - name: API Reference
       pageRef: /docs/api-reference
       weight: 2
-    - name: Search
+    - name: Benchmarks
+      pageRef: /docs/performance
       weight: 3
+    - name: Search
+      weight: 4
       params:
         type: search
     - name: GitHub
-      weight: 4
+      weight: 5
       url: https://github.com/MDA2AV/Glyph11
       params:
         icon: github
