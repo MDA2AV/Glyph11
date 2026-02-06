@@ -53,8 +53,8 @@ public partial class HardenedParserTests : IDisposable
         int split1 = data.Length / 3;
         int split2 = 2 * data.Length / 3;
 
-        var first = new BufferSegment(data[..split1]);
-        var last = first.Append(data[split1..split2]).Append(data[split2..]);
+        var first = new BufferSegment(data.AsMemory(0, split1));
+        var last = first.Append(data.AsMemory(split1, split2 - split1)).Append(data.AsMemory(split2));
 
         return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
     }

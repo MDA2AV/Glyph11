@@ -10,7 +10,7 @@ namespace Glyph11.Protocol;
 /// pooled arrays used by <see cref="Headers"/> and <see cref="QueryParameters"/>.
 /// </para>
 /// </summary>
-public class BinaryRequest : IDisposable
+public sealed class BinaryRequest : IDisposable
 {
     private readonly KeyValueList _headers = new(), _query = new();
 
