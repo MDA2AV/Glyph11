@@ -24,12 +24,15 @@ menu:
     - name: Benchmarks
       pageRef: /benchmarks
       weight: 3
-    - name: Search
+    - name: Probe Results
+      pageRef: /probe-results
       weight: 4
+    - name: Search
+      weight: 5
       params:
         type: search
     - name: GitHub
-      weight: 5
+      weight: 6
       url: https://github.com/MDA2AV/Glyph11
       params:
         icon: github

@@ -2,16 +2,17 @@ using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using GenHTTP.Parser;
-using GenHTTP.Types;
 using Glyph11;
+using Glyph11.Parser.Hardened;
+using Glyph11.Protocol;
+using Glyph11.Validation;
 
 var port = args.Length > 0 && int.TryParse(args[0], out var p) ? p : 5098;
 
 var listener = new TcpListener(IPAddress.Loopback, port);
 listener.Start();
 
-Console.WriteLine($"GenHTTP server listening on http://localhost:{port}");
+Console.WriteLine($"GlyphServer listening on http://localhost:{port}");
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
@@ -36,6 +37,8 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
     {
         var buffer = new byte[65536];
         var filled = 0;
+        var limits = ParserLimits.Default;
+        using var request = new BinaryRequest();
 
         try
         {
@@ -45,24 +48,33 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
                 if (read == 0) break;
                 filled += read;
 
-                // Try to parse a complete request from the accumulated buffer
                 while (filled > 0)
                 {
-                    var request = new Request();
                     var sequence = new ReadOnlySequence<byte>(buffer, 0, filled);
 
                     try
                     {
-                        if (!RequestParser.TryParse(sequence, request, out var bytesRead))
+                        if (!HardenedParser.TryExtractFullHeader(ref sequence, request, in limits, out var bytesRead))
                             break; // Need more data
-                        
-                        // Build and send response
-                        var path = Encoding.ASCII.GetString(request.Raw.Path.Span);
-                        var method = request.Method;
+
+                        // Post-parse semantic validation
+                        if (RequestSemantics.HasTransferEncodingWithContentLength(request) ||
+                            RequestSemantics.HasConflictingContentLength(request) ||
+                            RequestSemantics.HasConflictingCommaSeparatedContentLength(request) ||
+                            RequestSemantics.HasInvalidContentLengthFormat(request) ||
+                            RequestSemantics.HasInvalidHostHeaderCount(request) ||
+                            RequestSemantics.HasDotSegments(request))
+                        {
+                            await stream.WriteAsync(MakeErrorResponse(400, "Bad Request"), ct);
+                            return;
+                        }
+
+                        var method = Encoding.ASCII.GetString(request.Method.Span);
+                        var path = Encoding.ASCII.GetString(request.Path.Span);
                         var responseBytes = BuildResponse(method, path);
                         await stream.WriteAsync(responseBytes, ct);
 
-                        // Consume parsed bytes
+                        // Consume parsed bytes and reset for keep-alive
                         if (bytesRead > 0 && bytesRead <= filled)
                         {
                             Buffer.BlockCopy(buffer, bytesRead, buffer, 0, filled - bytesRead);
@@ -72,6 +84,8 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
                         {
                             filled = 0;
                         }
+
+                        request.Clear();
                     }
                     catch (HttpParseException)
                     {
@@ -93,9 +107,9 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
     }
 }
 
-static byte[] BuildResponse(GenHTTP.Protocol.RequestMethod method, string path)
+static byte[] BuildResponse(string method, string path)
 {
-    var body = $"Hello from GenHTTP server\r\nMethod: {method}\r\nPath: {path}\r\n";
+    var body = $"Hello from GlyphServer\r\nMethod: {method}\r\nPath: {path}\r\n";
     return MakeResponse(200, "OK", body);
 }
 

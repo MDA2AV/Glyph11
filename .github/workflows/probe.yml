@@ -1,0 +1,403 @@
+name: Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  probe:
+
+    name: Compliance Probe
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      contents: write
+      actions: write
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0
+
+    - name: Build
+      run: dotnet build src/Glyph11.sln -c Release
+
+    # ── Start all servers ──────────────────────────────────────────────
+
+    - name: Start GlyphServer
+      run: |
+        dotnet run --no-build -c Release --project src/Servers/GlyphServer -- 9001 &
+        echo $! > glyph.pid
+
+    - name: Start Kestrel (AspNetMinimal)
+      run: |
+        ASPNETCORE_URLS=http://localhost:9002 \
+          dotnet run --no-build -c Release --project src/Servers/AspNetMinimal &
+        echo $! > kestrel.pid
+
+    - name: Start GenHTTP (GenHTTPMinimal)
+      run: |
+        dotnet run --no-build -c Release --project src/Servers/GenHTTPMinimal &
+        echo $! > genhttp.pid
+
+    - name: Wait for servers
+      run: |
+        wait_for() {
+          local name=$1 url=$2
+          for i in $(seq 1 20); do
+            if curl -sf "$url" > /dev/null 2>&1; then
+              echo "$name ready"; return 0
+            fi
+            sleep 1
+          done
+          echo "::warning::$name did not start in time"
+        }
+        wait_for "GlyphServer" "http://localhost:9001/"
+        wait_for "Kestrel"     "http://localhost:9002/"
+        wait_for "GenHTTP"     "http://localhost:8080/"
+
+    # ── Run probe against each server ──────────────────────────────────
+
+    - name: Probe GlyphServer
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9001 --output probe-glyph.json || true
+
+    - name: Probe Kestrel
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9002 --output probe-kestrel.json || true
+
+    - name: Probe GenHTTP
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 8080 --output probe-genhttp.json || true
+
+    # ── Stop all servers ───────────────────────────────────────────────
+
+    - name: Stop servers
+      if: always()
+      run: |
+        kill $(cat glyph.pid)  2>/dev/null || true
+        kill $(cat kestrel.pid) 2>/dev/null || true
+        kill $(cat genhttp.pid) 2>/dev/null || true
+
+    # ── Process results ────────────────────────────────────────────────
+
+    - name: Process results
+      run: |
+        python3 << 'PYEOF'
+        import json, sys, os, subprocess, pathlib
+
+        # ── Strict expectations ──────────────────────────────────────
+        STRICT = {
+            'COMP-BASELINE': {
+                'accept': list(range(200, 300)),
+                'close_ok': False, 'timeout_ok': False,
+                'expected': '2xx',
+                'reason': 'Baseline connectivity \u2014 valid GET must receive 2xx'
+            },
+            'RFC9112-2.2-BARE-LF-REQUEST-LINE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Bare LF in request-line is a framing violation (RFC 9112 \u00a72.2)'
+            },
+            'RFC9112-2.2-BARE-LF-HEADER': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Bare LF in header field is a framing violation (RFC 9112 \u00a72.2)'
+            },
+            'RFC9112-5.1-OBS-FOLD': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Obs-fold (line folding) is deprecated and must be rejected (RFC 9112 \u00a75.1)'
+            },
+            'RFC9110-5.6.2-SP-BEFORE-COLON': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Space between header name and colon is invalid (RFC 9110 \u00a75.6.2)'
+            },
+            'RFC9112-3-MULTI-SP-REQUEST-LINE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Multiple SP in request-line is malformed (RFC 9112 \u00a73)'
+            },
+            'RFC9112-7.1-MISSING-HOST': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Missing Host header requires 400 (RFC 9112 \u00a77.1)'
+            },
+            'RFC9112-2.3-INVALID-VERSION': {
+                'accept': [400, 505], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400/505 or close',
+                'reason': 'Invalid HTTP version must be rejected (RFC 9112 \u00a72.3)'
+            },
+            'RFC9112-5-EMPTY-HEADER-NAME': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Empty header name (leading colon) is invalid (RFC 9112 \u00a75)'
+            },
+            'RFC9112-3-CR-ONLY-LINE-ENDING': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'CR without LF is a framing violation (RFC 9112 \u00a72.2)'
+            },
+            'SMUG-CL-TE-BOTH': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'CL + TE together enables smuggling \u2014 must reject (RFC 9112 \u00a76.1)'
+            },
+            'SMUG-DUPLICATE-CL': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Conflicting Content-Length values enable smuggling (RFC 9110 \u00a78.6)'
+            },
+            'SMUG-CL-LEADING-ZEROS': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Leading zeros in CL can cause length misinterpretation'
+            },
+            'SMUG-TE-XCHUNKED': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Unknown TE "xchunked" with CL present is ambiguous \u2014 must reject'
+            },
+            'SMUG-TE-TRAILING-SPACE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'TE "chunked " (trailing space) is obfuscation \u2014 must reject'
+            },
+            'SMUG-TE-SP-BEFORE-COLON': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Space before colon is invalid header syntax (RFC 9110 \u00a75.6.2)'
+            },
+            'SMUG-CL-NEGATIVE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Negative Content-Length is syntactically invalid'
+            },
+            'SMUG-CLTE-PIPELINE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'CL.TE smuggling vector \u2014 ambiguous framing must be rejected'
+            },
+            'MAL-BINARY-GARBAGE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': True,
+                'expected': '400/close/timeout',
+                'reason': 'Binary garbage is not valid HTTP \u2014 must reject'
+            },
+            'MAL-LONG-URL': {
+                'accept': [400, 414, 431], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400/414/431 or close',
+                'reason': '100 KB URL exceeds any reasonable limit'
+            },
+            'MAL-LONG-HEADER-VALUE': {
+                'accept': [400, 431], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400/431 or close',
+                'reason': '100 KB header value exceeds limits'
+            },
+            'MAL-MANY-HEADERS': {
+                'accept': [400, 431], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400/431 or close',
+                'reason': '10,000 headers exceeds any reasonable limit'
+            },
+            'MAL-NUL-IN-URL': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'NUL byte in URL is not valid in HTTP request-target'
+            },
+            'MAL-CONTROL-CHARS-HEADER': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Control characters in header values are invalid (RFC 9110 \u00a75.5)'
+            },
+            'MAL-INCOMPLETE-REQUEST': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': True,
+                'expected': '400/close/timeout',
+                'reason': 'Incomplete request \u2014 server must not crash, may timeout'
+            },
+            'MAL-EMPTY-REQUEST': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': True,
+                'expected': '400/close/timeout',
+                'reason': 'Empty request \u2014 server must not crash, may timeout'
+            },
+        }
+
+        # ── Evaluate one server's results ────────────────────────────
+        def evaluate(raw):
+            results = []
+            for r in raw['results']:
+                tid = r['id']
+                spec = STRICT.get(tid)
+                if not spec:
+                    results.append({**r, 'verdict': r['verdict'], 'expected': '?',
+                        'got': str(r.get('statusCode') or r.get('connectionState', '')),
+                        'reason': 'No strict specification defined'})
+                    continue
+
+                status = r.get('statusCode')
+                conn   = r.get('connectionState', '')
+                passed = (
+                    (status is not None and status in spec['accept']) or
+                    (spec['close_ok'] and conn == 'ClosedByServer') or
+                    (spec['timeout_ok'] and conn == 'TimedOut')
+                )
+                got     = str(status) if status is not None else conn
+                verdict = 'Pass' if passed else 'Fail'
+                reason  = spec['reason'] if passed else f"Expected {spec['expected']}, got {got} \u2014 {spec['reason']}"
+
+                results.append({
+                    'id': tid, 'description': r['description'],
+                    'category': r['category'], 'rfc': r.get('rfcReference'),
+                    'verdict': verdict, 'statusCode': status,
+                    'expected': spec['expected'], 'got': got,
+                    'connectionState': conn, 'reason': reason,
+                    'durationMs': r.get('durationMs', 0),
+                })
+
+            total  = len(results)
+            passed = sum(1 for r in results if r['verdict'] == 'Pass')
+            return {'summary': {'total': total, 'passed': passed, 'failed': total - passed}, 'results': results}
+
+        # ── Process each server ──────────────────────────────────────
+        SERVERS = [
+            ('Glyph11', 'probe-glyph.json'),
+            ('Kestrel', 'probe-kestrel.json'),
+            ('GenHTTP', 'probe-genhttp.json'),
+        ]
+
+        commit_id   = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        commit_msg  = subprocess.check_output(['git', 'log', '-1', '--format=%s']).decode().strip()
+        commit_time = subprocess.check_output(['git', 'log', '-1', '--format=%cI']).decode().strip()
+
+        server_data = []
+        for name, path in SERVERS:
+            p = pathlib.Path(path)
+            if not p.exists():
+                print(f'::warning::{name}: result file {path} not found, skipping')
+                continue
+            with open(path) as f:
+                raw = json.load(f)
+            ev = evaluate(raw)
+            ev['name'] = name
+            server_data.append(ev)
+            s = ev['summary']
+            print(f"{name}: {s['passed']}/{s['total']} passed, {s['failed']} failed")
+
+        # ── Write data.js ────────────────────────────────────────────
+        output = {
+            'commit': {'id': commit_id, 'message': commit_msg, 'timestamp': commit_time},
+            'servers': server_data,
+        }
+        with open('probe-data.js', 'w') as f:
+            f.write('window.PROBE_DATA = ' + json.dumps(output) + ';')
+
+        # ── Write PR comment ─────────────────────────────────────────
+        lines = ['<!-- glyph11-probe-results -->', '## Glyph11 Probe \u2014 Compliance Comparison', '']
+
+        # Summary badges
+        badges = []
+        for sv in server_data:
+            s = sv['summary']
+            badges.append(f"**{sv['name']}** {s['passed']}/{s['total']}")
+        lines.append(' · '.join(badges))
+        lines.append('')
+
+        # Collect all test IDs in order from first server
+        test_ids = [r['id'] for r in server_data[0]['results']] if server_data else []
+
+        # Build lookup: server_name -> {test_id -> result}
+        lookup = {}
+        for sv in server_data:
+            lookup[sv['name']] = {r['id']: r for r in sv['results']}
+
+        names = [sv['name'] for sv in server_data]
+        hdr_cols = ' | '.join(f'**{n}**' for n in names)
+
+        for cat_name, title in [('Compliance', 'Compliance'), ('Smuggling', 'Smuggling'), ('MalformedInput', 'Malformed Input')]:
+            cat_tests = [tid for tid in test_ids if lookup[names[0]][tid]['category'] == cat_name]
+            if not cat_tests:
+                continue
+            lines.append(f'### {title}')
+            lines.append('')
+            lines.append(f'| Test | Expected | {hdr_cols} | Reason |')
+            sep = '|------|----------' + ''.join('|:---:' for _ in names) + '|--------|'
+            lines.append(sep)
+            for tid in cat_tests:
+                first = lookup[names[0]][tid]
+                expected = first['expected']
+                reason = STRICT.get(tid, {}).get('reason', '')
+                cells = []
+                for n in names:
+                    r = lookup[n].get(tid)
+                    if not r:
+                        cells.append('\u2014')
+                    else:
+                        icon = '\u2705' if r['verdict'] == 'Pass' else '\u274c'
+                        cells.append(f"{icon} {r['got']}")
+                row_cells = ' | '.join(cells)
+                lines.append(f"| `{tid}` | {expected} | {row_cells} | {reason} |")
+            lines.append('')
+
+        lines.append(f"<sub>Commit: {commit_id[:7]}</sub>")
+
+        with open('probe-comment.md', 'w') as f:
+            f.write('\n'.join(lines))
+        PYEOF
+
+    # ── Upload / publish ───────────────────────────────────────────
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: probe-results
+        path: probe-*.json
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      run: |
+        COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
+          --jq '.[] | select(.body | contains("<!-- glyph11-probe-results -->")) | .id' | head -1)
+        if [ -n "$COMMENT_ID" ]; then
+          gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID \
+            -X PATCH -f body="$(cat probe-comment.md)"
+        else
+          gh pr comment ${{ github.event.number }} --body-file probe-comment.md
+        fi
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push to gh-pages
+      if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+      run: |
+        git fetch origin gh-pages
+        git worktree add /tmp/gh-pages gh-pages
+        mkdir -p /tmp/gh-pages/probe
+        cp probe-data.js /tmp/gh-pages/probe/data.js
+        cd /tmp/gh-pages
+        git add probe/data.js
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+        else
+          git commit -m "Update probe results"
+          git push origin gh-pages
+        fi
+        cd -
+        git worktree remove /tmp/gh-pages
+
+    - name: Rebuild docs
+      if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+      run: gh workflow run "Deploy Docs to GitHub Pages"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

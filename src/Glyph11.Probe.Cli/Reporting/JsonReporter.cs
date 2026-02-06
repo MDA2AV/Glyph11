@@ -33,6 +33,7 @@ public static class JsonReporter
                 id = r.TestCase.Id,
                 description = r.TestCase.Description,
                 category = r.TestCase.Category.ToString(),
+                rfcReference = r.TestCase.RfcReference,
                 verdict = r.Verdict.ToString(),
                 statusCode = r.Response?.StatusCode,
                 connectionState = r.ConnectionState.ToString(),
