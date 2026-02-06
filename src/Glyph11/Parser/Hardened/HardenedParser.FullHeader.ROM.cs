@@ -181,9 +181,6 @@ public static partial class HardenedParser
             if (!IsValidFieldValue(valueSpan))
                 throw new HttpParseException("Header value contains invalid characters.");
 
-            if (IsContentLength(nameSpan) && !IsValidContentLengthValue(valueSpan))
-                throw new HttpParseException("Invalid Content-Length value.");
-
             if (++headerCount > limits.MaxHeaderCount)
                 throw new HttpParseException("Header count exceeds limit.");
 

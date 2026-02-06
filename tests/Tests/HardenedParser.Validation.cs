@@ -1,5 +1,6 @@
 using Glyph11;
 using Glyph11.Parser.Hardened;
+using Glyph11.Validation;
 
 namespace Tests;
 
@@ -291,19 +292,19 @@ public partial class HardenedParserTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Throws_NegativeContentLength(bool multi)
+    public void NegativeContentLength_DetectedBySemantic(bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: -1\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: -1\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Throws_ContentLengthLeadingZeros(bool multi)
+    public void ContentLengthLeadingZeros_DetectedBySemantic(bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: 005\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: 005\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
     }
 
     [Theory]
@@ -350,46 +351,36 @@ public partial class HardenedParserTests
     [Theory]
     [InlineData("00", false), InlineData("00", true)]
     [InlineData("01", false), InlineData("01", true)]
-    public void Throws_ContentLengthDoubleZero(string value, bool multi)
+    public void ContentLengthDoubleZero_DetectedBySemantic(string value, bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse($"GET / HTTP/1.1\r\nContent-Length: {value}\r\n\r\n", multi));
+        Parse($"GET / HTTP/1.1\r\nContent-Length: {value}\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Throws_ContentLengthTrailingComma(bool multi)
+    public void ContentLengthTrailingComma_DetectedBySemantic(bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: 42,\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: 42,\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Throws_ContentLengthCommaOnly(bool multi)
+    public void ContentLengthCommaOnly_DetectedBySemantic(bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: ,\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: ,\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Throws_ContentLengthLeadingZeroInCommaSeparated(bool multi)
+    public void ContentLengthLeadingZeroInCommaSeparated_DetectedBySemantic(bool multi)
     {
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n", multi));
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DoesNotValidateNonContentLengthHeader(bool multi)
-    {
-        // A 14-char header that isn't Content-Length should not trigger CL validation
-        var (ok, _) = Parse("GET / HTTP/1.1\r\nAccept-Charset: whatever\r\n\r\n", multi);
-        Assert.True(ok);
+        Parse("GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
     }
 }

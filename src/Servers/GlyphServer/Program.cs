@@ -62,8 +62,15 @@ static async Task HandleClientAsync(TcpClient client, CancellationToken ct)
                             RequestSemantics.HasConflictingContentLength(request) ||
                             RequestSemantics.HasConflictingCommaSeparatedContentLength(request) ||
                             RequestSemantics.HasInvalidContentLengthFormat(request) ||
+                            RequestSemantics.HasContentLengthWithLeadingZeros(request) ||
                             RequestSemantics.HasInvalidHostHeaderCount(request) ||
-                            RequestSemantics.HasDotSegments(request))
+                            RequestSemantics.HasInvalidTransferEncoding(request) ||
+                            RequestSemantics.HasDotSegments(request) ||
+                            RequestSemantics.HasFragmentInRequestTarget(request) ||
+                            RequestSemantics.HasBackslashInPath(request) ||
+                            RequestSemantics.HasDoubleEncoding(request) ||
+                            RequestSemantics.HasEncodedNullByte(request) ||
+                            RequestSemantics.HasOverlongUtf8(request))
                         {
                             await stream.WriteAsync(MakeErrorResponse(400, "Bad Request"), ct);
                             return;

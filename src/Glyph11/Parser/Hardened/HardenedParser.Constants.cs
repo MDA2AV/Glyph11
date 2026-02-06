@@ -36,7 +36,7 @@ public static partial class HardenedParser
     private static readonly SearchValues<byte> FieldValueSearchValues = SearchValues.Create(
         BuildFieldValueBytes());
 
-    // Request-target: reject control chars (0x00-0x1F, 0x7F)
+    // Request-target: only VCHAR (0x21-0x7E) and SP (0x20) — RFC 3986 URIs are ASCII-only
     private static readonly SearchValues<byte> RequestTargetSearchValues = SearchValues.Create(
         BuildRequestTargetBytes());
 
@@ -52,10 +52,10 @@ public static partial class HardenedParser
 
     private static byte[] BuildRequestTargetBytes()
     {
-        var bytes = new byte[(0x7E - 0x20 + 1) + (0xFF - 0x80 + 1)];
+        // ASCII VCHAR (0x21-0x7E) + SP (0x20) only — no non-ASCII (0x80-0xFF)
+        var bytes = new byte[0x7E - 0x20 + 1];
         int i = 0;
         for (int b = 0x20; b <= 0x7E; b++) bytes[i++] = (byte)b;
-        for (int b = 0x80; b <= 0xFF; b++) bytes[i++] = (byte)b;
         return bytes;
     }
 
@@ -97,76 +97,5 @@ public static partial class HardenedParser
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsValidRequestTarget(ReadOnlySpan<byte> span)
         => span.IndexOfAnyExcept(RequestTargetSearchValues) < 0;
-
-    /// <summary>
-    /// Case-insensitive match for "content-length" (14 bytes).
-    /// Uses OR 0x20 to lowercase ASCII letters; short-circuits on first mismatch.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsContentLength(ReadOnlySpan<byte> name)
-        => name.Length == 14
-            && (name[0]  | 0x20) == 'c'
-            && (name[1]  | 0x20) == 'o'
-            && (name[2]  | 0x20) == 'n'
-            && (name[3]  | 0x20) == 't'
-            && (name[4]  | 0x20) == 'e'
-            && (name[5]  | 0x20) == 'n'
-            && (name[6]  | 0x20) == 't'
-            && name[7]           == '-'
-            && (name[8]  | 0x20) == 'l'
-            && (name[9]  | 0x20) == 'e'
-            && (name[10] | 0x20) == 'n'
-            && (name[11] | 0x20) == 'g'
-            && (name[12] | 0x20) == 't'
-            && (name[13] | 0x20) == 'h';
-
-    /// <summary>
-    /// Validates Content-Length value: 1*DIGIT with optional comma-separated duplicates
-    /// per RFC 9112 §6.2. Rejects empty, leading zeros (except bare "0"), negative/minus,
-    /// and non-digit characters.
-    /// </summary>
-    private static bool IsValidContentLengthValue(ReadOnlySpan<byte> value)
-    {
-        if (value.IsEmpty) return false;
-
-        int pos = 0;
-        while (pos < value.Length)
-        {
-            // Skip OWS before each element
-            while (pos < value.Length && (value[pos] == (byte)' ' || value[pos] == (byte)'\t'))
-                pos++;
-
-            if (pos >= value.Length) return false;
-
-            // Must start with a digit
-            if (!IsDigit(value[pos])) return false;
-
-            // Reject leading zeros: "0" is ok, "00" or "007" is not
-            int digitStart = pos;
-            if (value[pos] == (byte)'0')
-            {
-                pos++;
-                if (pos < value.Length && IsDigit(value[pos]))
-                    return false; // leading zero
-            }
-            else
-            {
-                pos++;
-                while (pos < value.Length && IsDigit(value[pos]))
-                    pos++;
-            }
-
-            // Skip OWS after the number
-            while (pos < value.Length && (value[pos] == (byte)' ' || value[pos] == (byte)'\t'))
-                pos++;
-
-            // Must be end or comma
-            if (pos >= value.Length) return true;
-            if (value[pos] != (byte)',') return false;
-            pos++; // skip comma
-        }
-
-        return false; // trailing comma with nothing after
-    }
 
 }

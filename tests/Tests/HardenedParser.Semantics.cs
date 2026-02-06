@@ -223,9 +223,8 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_NonDigitContentLength(bool multi)
     {
-        // Now rejected at parse time by HardenedParser
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: abc\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: abc\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     [Theory]
@@ -233,9 +232,8 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_EmptyContentLength(bool multi)
     {
-        // Now rejected at parse time by HardenedParser
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length:\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length:\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     [Theory]
@@ -243,9 +241,8 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_ContentLengthWithSpaces(bool multi)
     {
-        // Now rejected at parse time by HardenedParser
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: 1 2\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: 1 2\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
     }
 
     // ---- HasContentLengthWithLeadingZeros ----
@@ -264,9 +261,8 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_LeadingZeros(bool multi)
     {
-        // Now rejected at parse time by HardenedParser
-        Assert.Throws<HttpParseException>(
-            () => Parse("GET / HTTP/1.1\r\nContent-Length: 0200\r\n\r\n", multi));
+        Parse("GET / HTTP/1.1\r\nContent-Length: 0200\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
     }
 
     [Theory]
@@ -390,9 +386,9 @@ public partial class HardenedParserTests
     }
 
     [Fact]
-    public void Semantics_HasOverlongUtf8_C0()
+    public void Semantics_HasOverlongUtf8_C0_RejectedByParser()
     {
-        // 0xC0 0xAF is overlong encoding of '/'
+        // 0xC0 0xAF is overlong encoding of '/' — now rejected at parse time (non-ASCII in request-target)
         var header = "GET "u8.ToArray();
         var path = new byte[] { 0x2F, 0xC0, 0xAF };
         var tail = " HTTP/1.1\r\n\r\n"u8.ToArray();
@@ -402,8 +398,8 @@ public partial class HardenedParserTests
         tail.CopyTo(all, header.Length + path.Length);
 
         ReadOnlyMemory<byte> rom = all;
-        HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _);
-        Assert.True(RequestSemantics.HasOverlongUtf8(_request));
+        Assert.Throws<HttpParseException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _));
     }
 
     // ---- HasInvalidTransferEncoding ----

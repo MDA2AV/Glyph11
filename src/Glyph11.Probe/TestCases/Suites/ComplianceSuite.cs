@@ -144,6 +144,124 @@ public static class ComplianceSuite
                 AllowConnectionClose = true
             }
         };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-3-MISSING-TARGET",
+            Description = "Request line with no target (space but no path) must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §3",
+            PayloadFactory = ctx => MakeRequest($"GET HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-3.2-FRAGMENT-IN-TARGET",
+            Description = "Fragment (#) in request-target must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §3.2",
+            PayloadFactory = ctx => MakeRequest($"GET /path#frag HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-2.3-HTTP09-REQUEST",
+            Description = "HTTP/0.9 request (no version) must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §2.3",
+            PayloadFactory = _ => MakeRequest("GET /\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (state is ConnectionState.TimedOut or ConnectionState.ClosedByServer)
+                        return TestVerdict.Pass;
+                    if (response is not null && response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    return TestVerdict.Fail;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-5-INVALID-HEADER-NAME",
+            Description = "Header name with invalid characters (brackets) must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §5",
+            PayloadFactory = ctx => MakeRequest($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nBad[Name: value\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-5-HEADER-NO-COLON",
+            Description = "Header line without colon must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §5",
+            PayloadFactory = ctx => MakeRequest($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nNoColonHere\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9110-5.4-DUPLICATE-HOST",
+            Description = "Duplicate Host headers with different values must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9110 §5.4",
+            PayloadFactory = ctx => MakeRequest($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nHost: other.example.com\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-6.1-CL-NON-NUMERIC",
+            Description = "Non-numeric Content-Length must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §6.1",
+            PayloadFactory = ctx => MakeRequest($"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nContent-Length: abc\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "RFC9112-6.1-CL-PLUS-SIGN",
+            Description = "Content-Length with plus sign must be rejected",
+            Category = TestCategory.Compliance,
+            RfcReference = "RFC 9112 §6.1",
+            PayloadFactory = ctx => MakeRequest($"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nContent-Length: +5\r\n\r\nhello"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
     }
 
     private static byte[] MakeRequest(string request) => Encoding.ASCII.GetBytes(request);

@@ -169,6 +169,133 @@ public static class MalformedInputSuite
                 }
             }
         };
+
+        yield return new TestCase
+        {
+            Id = "MAL-LONG-HEADER-NAME",
+            Description = "100KB header name should be rejected with 400/431",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = ctx =>
+            {
+                var longName = new string('A', 100_000);
+                return MakeRequest($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n{longName}: val\r\n\r\n");
+            },
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    return response.StatusCode >= 400 && response.StatusCode < 600
+                        ? TestVerdict.Pass
+                        : TestVerdict.Fail;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "MAL-LONG-METHOD",
+            Description = "100KB method name should be rejected",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = ctx =>
+            {
+                var longMethod = new string('A', 100_000);
+                return MakeRequest($"{longMethod} / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n\r\n");
+            },
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    return response.StatusCode >= 400 && response.StatusCode < 600
+                        ? TestVerdict.Pass
+                        : TestVerdict.Fail;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "MAL-NON-ASCII-HEADER-NAME",
+            Description = "Non-ASCII bytes (UTF-8 ë) in header name must be rejected",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = ctx =>
+            {
+                // Build raw bytes: can't use Encoding.ASCII for non-ASCII
+                var before = Encoding.ASCII.GetBytes($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nX-T");
+                byte[] utf8Bytes = [0xC3, 0xAB]; // UTF-8 ë
+                var after = Encoding.ASCII.GetBytes("st: value\r\n\r\n");
+                var payload = new byte[before.Length + utf8Bytes.Length + after.Length];
+                before.CopyTo(payload, 0);
+                utf8Bytes.CopyTo(payload, before.Length);
+                after.CopyTo(payload, before.Length + utf8Bytes.Length);
+                return payload;
+            },
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "MAL-NON-ASCII-URL",
+            Description = "Non-ASCII bytes (UTF-8 é) in URL must be rejected",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = ctx =>
+            {
+                // Build raw bytes: can't use Encoding.ASCII for non-ASCII
+                var before = Encoding.ASCII.GetBytes("GET /caf");
+                byte[] utf8Bytes = [0xC3, 0xA9]; // UTF-8 é
+                var after = Encoding.ASCII.GetBytes($" HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n\r\n");
+                var payload = new byte[before.Length + utf8Bytes.Length + after.Length];
+                before.CopyTo(payload, 0);
+                utf8Bytes.CopyTo(payload, before.Length);
+                after.CopyTo(payload, before.Length + utf8Bytes.Length);
+                return payload;
+            },
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "MAL-CL-OVERFLOW",
+            Description = "Content-Length with integer overflow value must be rejected",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = ctx => MakeRequest(
+                $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nContent-Length: 99999999999999999999\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                ExpectedStatus = StatusCodeRange.Range4xx,
+                AllowConnectionClose = true
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "MAL-WHITESPACE-ONLY-LINE",
+            Description = "Whitespace-only request line should be rejected or timeout",
+            Category = TestCategory.MalformedInput,
+            PayloadFactory = _ => MakeRequest("   \r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (state is ConnectionState.TimedOut or ConnectionState.ClosedByServer)
+                        return TestVerdict.Pass;
+                    if (response is not null && response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    return TestVerdict.Fail;
+                }
+            }
+        };
     }
 
     private static byte[] MakeRequest(string request) => Encoding.ASCII.GetBytes(request);
