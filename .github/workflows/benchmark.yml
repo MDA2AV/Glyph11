@@ -40,7 +40,7 @@ jobs:
 
     - name: Combine benchmark JSON results
       run: |
-        jq -s '[ .[] | .Benchmarks[] ]' \
+        jq -s '{ Benchmarks: [ .[].Benchmarks[] ] }' \
           src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
           > combined-benchmarks.json
 
