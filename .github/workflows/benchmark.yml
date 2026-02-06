@@ -11,10 +11,11 @@ jobs:
 
     name: Parser Benchmarks
 
+    if: github.event_name == 'pull_request'
+
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
       pull-requests: write
 
     steps:
@@ -50,13 +51,12 @@ jobs:
         tool: 'benchmarkdotnet'
         output-file-path: combined-benchmarks.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
         gh-pages-branch: gh-pages
         benchmark-data-dir-path: benchmarks
         alert-threshold: '115%'
         fail-on-alert: true
         comment-on-alert: true
-        comment-always: ${{ github.event_name == 'pull_request' }}
+        comment-always: true
         summary-always: true
 
   full:
@@ -66,6 +66,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
 
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     steps:
 
@@ -87,3 +90,23 @@ jobs:
       with:
         name: full-benchmark-results
         path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
+
+    - name: Combine benchmark JSON results
+      run: |
+        jq -s '{ Benchmarks: [ .[].Benchmarks[] ] }' \
+          src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
+          > combined-benchmarks.json
+
+    - name: Compare and update baseline
+      uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1
+      with:
+        tool: 'benchmarkdotnet'
+        output-file-path: combined-benchmarks.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: ${{ github.ref == 'refs/heads/main' }}
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: benchmarks
+        alert-threshold: '115%'
+        fail-on-alert: true
+        comment-on-alert: true
+        summary-always: true
