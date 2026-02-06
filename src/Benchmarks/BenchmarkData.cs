@@ -7,6 +7,17 @@ namespace Benchmarks;
 public static class BenchmarkData
 {
     /// <summary>
+    /// Builds a small (~80B) HTTP/1.1 request header with 2 headers.
+    /// </summary>
+    public static byte[] BuildSmallHeader()
+    {
+        return Encoding.ASCII.GetBytes(
+            "GET /route?p1=1&p2=2&p3=3&p4=4 HTTP/1.1\r\n" +
+            "Content-Length: 100\r\n" +
+            "Server: GenHTTP\r\n\r\n");
+    }
+
+    /// <summary>
     /// Builds a valid HTTP/1.1 request header block of approximately targetBytes size.
     /// Fills with realistic headers until the target is reached.
     /// </summary>

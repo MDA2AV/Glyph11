@@ -101,6 +101,18 @@ Detects fragment identifiers (`#`) in the request path. Fragments must not appea
 
 **RFC:** 9112 Section 3.2.
 
+## Performance
+
+All checks are **zero-allocation** and run in nanoseconds. Path-scanning checks (DotSegments, Fragment, Backslash, DoubleEncoding, EncodedNull, OverlongUtf8) are constant-time since they only inspect the request path. Header-scanning checks scale linearly with header count.
+
+| Category | Small (~80B) | 32KB (~151 headers) |
+|----------|------------:|--------------------:|
+| Header-scanning (worst) | ~9 ns | ~208 ns |
+| Path-scanning (worst) | ~2.5 ns | ~2.6 ns |
+| All 13 checks combined | ~60 ns | ~1.4 us |
+
+See [Performance](/docs/performance/) for full benchmark tables.
+
 ## Integration Pattern
 
 Run all semantic checks after successful parsing:

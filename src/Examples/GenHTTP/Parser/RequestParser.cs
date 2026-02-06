@@ -11,10 +11,13 @@ public static class RequestParser
     private static readonly ParserLimits Limits = ParserLimits.Default;
 
     public static bool TryParse(ReadOnlySequence<byte> buffer, Request into, out int bytesRead)
+        => TryParse(buffer, into, in Limits, out bytesRead);
+
+    public static bool TryParse(ReadOnlySequence<byte> buffer, Request into, in ParserLimits limits, out int bytesRead)
     {
         var raw = into.Source;
 
-        if (HardenedParser.TryExtractFullHeader(ref buffer, raw, in Limits, out bytesRead))
+        if (HardenedParser.TryExtractFullHeader(ref buffer, raw, in limits, out bytesRead))
         {
             if (RequestSemantics.HasTransferEncodingWithContentLength(raw))
                 throw new HttpParseException("Request smuggling: TE + CL.");
