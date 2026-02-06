@@ -1,0 +1,48 @@
+baseURL: https://MDA2AV.github.io/Glyph11/
+languageCode: en-us
+title: Glyph11
+
+module:
+  imports:
+    - path: github.com/imfing/hextra
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+
+menu:
+  main:
+    - name: Docs
+      pageRef: /docs
+      weight: 1
+    - name: API Reference
+      pageRef: /docs/api-reference
+      weight: 2
+    - name: Search
+      weight: 3
+      params:
+        type: search
+    - name: GitHub
+      weight: 4
+      url: https://github.com/MDA2AV/Glyph11
+      params:
+        icon: github
+
+params:
+  navbar:
+    displayTitle: false
+    displayLogo: true
+    logo:
+      path: images/logo.svg
+      dark: images/logo.svg
+      width: 80
+      height: 40
+  footer:
+    displayCopyright: false
+    displayPoweredBy: true
+  editURL:
+    enable: true
+    base: https://github.com/MDA2AV/Glyph11/edit/main/docs/content
