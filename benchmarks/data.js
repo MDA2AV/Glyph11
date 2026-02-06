@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770396511931,
+  "lastUpdate": 1770397457726,
   "repoUrl": "https://github.com/MDA2AV/Glyph11",
   "entries": {
     "Benchmark": [
@@ -314,6 +314,208 @@ window.BENCHMARK_DATA = {
             "value": 16270.473876953125,
             "unit": "ns",
             "range": "± 71.65121261139609"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_Small.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_4K.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_32K.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "165835485+MDA2AV@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2b8f47e314dde96d5c73c65e1a60148c09e2c4cb",
+          "message": "Merge pull request #16 from MDA2AV/move-bench\n\nMove benchmarks to root",
+          "timestamp": "2026-02-06T16:59:56Z",
+          "url": "https://github.com/MDA2AV/Glyph11/commit/2b8f47e314dde96d5c73c65e1a60148c09e2c4cb"
+        },
+        "date": 1770397457320,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_Small",
+            "value": 125.9111939271291,
+            "unit": "ns",
+            "range": "± 1.0575460767138234"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_4K",
+            "value": 338.01439301172894,
+            "unit": "ns",
+            "range": "± 1.5740496070739196"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_32K",
+            "value": 2344.38224029541,
+            "unit": "ns",
+            "range": "± 2.7448174101359797"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM",
+            "value": 137.1301510334015,
+            "unit": "ns",
+            "range": "± 1.189542591262213"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment",
+            "value": 346.5772439638774,
+            "unit": "ns",
+            "range": "± 1.435360911617415"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM",
+            "value": 675.3335173924764,
+            "unit": "ns",
+            "range": "± 0.7766832860409361"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment",
+            "value": 1728.8943411509197,
+            "unit": "ns",
+            "range": "± 4.533599991113948"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM",
+            "value": 4505.650652567546,
+            "unit": "ns",
+            "range": "± 24.923738102538287"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment",
+            "value": 11705.23560587565,
+            "unit": "ns",
+            "range": "± 19.593770579077045"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM",
+            "value": 182.79303153355917,
+            "unit": "ns",
+            "range": "± 1.0643140222178733"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment",
+            "value": 416.2855900128682,
+            "unit": "ns",
+            "range": "± 2.079198145613925"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM",
+            "value": 1056.3842525482178,
+            "unit": "ns",
+            "range": "± 1.907673237645705"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment",
+            "value": 2089.9739138285317,
+            "unit": "ns",
+            "range": "± 6.221251776185811"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM",
+            "value": 7224.245206197103,
+            "unit": "ns",
+            "range": "± 8.550585393205699"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment",
+            "value": 14821.573379516602,
+            "unit": "ns",
+            "range": "± 54.11375937213927"
           },
           {
             "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM.Allocated",
