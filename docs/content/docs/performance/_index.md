@@ -75,12 +75,6 @@ All checks are **zero-allocation**. Running all 13 checks on a typical small req
 - **Incomplete input** (no `\r\n\r\n`) returns `false` with zero allocation
 - **SIMD-accelerated validation** (`SearchValues<byte>`, `IndexOfAnyExcept`) keeps the hardened parser within 1.4-1.6x of the unvalidated parser
 
-## Benchmark Trends
-
-Interactive chart tracking performance across commits. Updated on each manual benchmark run on `main`.
-
-<iframe src="/Glyph11/benchmarks/index.html" width="100%" height="600" frameborder="0" style="border: 1px solid #e5e7eb; border-radius: 8px;"></iframe>
-
 ## Running Benchmarks
 
 ```bash

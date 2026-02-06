@@ -22,7 +22,7 @@ menu:
       pageRef: /docs/api-reference
       weight: 2
     - name: Benchmarks
-      pageRef: /docs/performance
+      pageRef: /benchmarks
       weight: 3
     - name: Search
       weight: 4
