@@ -95,14 +95,14 @@ public class FlexibleParserBenchmark
 
     // ---- Small: ROM / MultiSegment ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Small_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _memory, _into.Source, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Small_MultiSegment()
     {
         _into.Reset();
@@ -111,14 +111,14 @@ public class FlexibleParserBenchmark
 
     // ---- 1KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header1K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom1K, _into.Source, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header1K_MultiSegment()
     {
         _into.Reset();
@@ -127,14 +127,14 @@ public class FlexibleParserBenchmark
 
     // ---- 4KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header4K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom4K, _into.Source, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header4K_MultiSegment()
     {
         _into.Reset();
@@ -159,14 +159,14 @@ public class FlexibleParserBenchmark
 
     // ---- 32KB ----
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom32K, _into.Source, out _);
     }
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_MultiSegment()
     {
         _into.Reset();

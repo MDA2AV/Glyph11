@@ -6,14 +6,12 @@ using Glyph11.Parser.Hardened;
 
 namespace Benchmarks;
 
-// todo 32KB HEADERS
-
 [MemoryDiagnoser]
 public class HardenedParserBenchmark
 {
     private readonly Request _into = new();
 
-    private static readonly ParserLimits Limits = ParserLimits.Default with { MaxTotalHeaderBytes = 64 * 1024 };
+    private static readonly ParserLimits Limits = ParserLimits.Default with { MaxTotalHeaderBytes = 64 * 1024, MaxHeaderCount = 200 };
 
     // ---- Small (~80B) ----
 
@@ -72,14 +70,14 @@ public class HardenedParserBenchmark
 
     // ---- Small: ROM / MultiSegment ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Small_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _memory, _into.Source, in Limits, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Small_MultiSegment()
     {
         _into.Reset();
@@ -88,14 +86,14 @@ public class HardenedParserBenchmark
 
     // ---- 1KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header1K_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _rom1K, _into.Source, in Limits, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header1K_MultiSegment()
     {
         _into.Reset();
@@ -104,14 +102,14 @@ public class HardenedParserBenchmark
 
     // ---- 4KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header4K_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _rom4K, _into.Source, in Limits, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header4K_MultiSegment()
     {
         _into.Reset();
@@ -136,14 +134,14 @@ public class HardenedParserBenchmark
 
     // ---- 32KB ----
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _rom32K, _into.Source, in Limits, out _);
     }
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_MultiSegment()
     {
         _into.Reset();
