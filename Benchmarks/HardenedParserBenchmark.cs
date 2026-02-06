@@ -6,6 +6,17 @@ using Glyph11.Parser.Hardened;
 
 namespace Benchmarks;
 
+/*
+ | Method                 | Mean        | Error        | StdDev     | Gen0   | Allocated |
+   |----------------------- |------------:|-------------:|-----------:|-------:|----------:|
+   | Small_ROM              |    96.37 ns |    17.844 ns |   0.978 ns |      - |         - |
+   | Small_MultiSegment     |   205.71 ns |     7.895 ns |   0.433 ns | 0.0057 |     112 B |
+   | Header4K_ROM           |   691.88 ns |   252.478 ns |  13.839 ns |      - |         - |
+   | Header4K_MultiSegment  | 1,251.61 ns |   236.890 ns |  12.985 ns | 0.2193 |    4128 B |
+   | Header32K_ROM          | 5,017.95 ns | 3,535.474 ns | 193.791 ns |      - |         - |
+   | Header32K_MultiSegment | 8,811.07 ns | 2,621.855 ns | 143.713 ns | 1.7242 |   32808 B |
+ */
+
 [MemoryDiagnoser]
 public class HardenedParserBenchmark
 {

@@ -155,6 +155,137 @@ public static class SmugglingSuite
                 }
             }
         };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-TECL-PIPELINE",
+            Description = "TE.CL smuggling probe — TE: chunked + CL: 30 with pipelined GET",
+            Category = TestCategory.Smuggling,
+            RequiresConnectionReuse = true,
+            PayloadFactory = ctx =>
+            {
+                // TE.CL reverse: TE parser sees chunked body, CL parser reads 30 bytes
+                var body = $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nTransfer-Encoding: chunked\r\nContent-Length: 30\r\n\r\n0\r\n\r\n";
+                return Encoding.ASCII.GetBytes(body);
+            },
+            FollowUpPayloadFactory = ctx =>
+                Encoding.ASCII.GetBytes($"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is not null && response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    if (state == ConnectionState.ClosedByServer)
+                        return TestVerdict.Pass;
+                    return TestVerdict.Warn;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-CL-TRAILING-SPACE",
+            Description = "Content-Length with trailing space — OWS trimming is valid per RFC 9110 §5.5",
+            Category = TestCategory.Smuggling,
+            PayloadFactory = ctx => MakeRequest(
+                $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nContent-Length: 5 \r\n\r\nhello"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    if (response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    // 2xx is RFC-compliant (OWS trimming) but worth noting
+                    return TestVerdict.Warn;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-HEADER-INJECTION",
+            Description = "Apparent CRLF injection — payload is actually two valid headers on the wire",
+            Category = TestCategory.Smuggling,
+            PayloadFactory = ctx => MakeRequest(
+                $"GET / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nX-Test: val\r\nInjected: yes\r\n\r\n"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    if (response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    // 2xx is correct — these are two well-formed headers
+                    return TestVerdict.Warn;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-TE-DOUBLE-CHUNKED",
+            Description = "Transfer-Encoding: chunked, chunked with CL is ambiguous",
+            Category = TestCategory.Smuggling,
+            PayloadFactory = ctx => MakeRequest(
+                $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nTransfer-Encoding: chunked, chunked\r\nContent-Length: 5\r\n\r\nhello"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    if (response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    return TestVerdict.Warn;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-CL-EXTRA-LEADING-SP",
+            Description = "Content-Length with extra leading whitespace (double space OWS)",
+            Category = TestCategory.Smuggling,
+            PayloadFactory = ctx => MakeRequest(
+                $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nContent-Length:  5\r\n\r\nhello"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    if (response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    // Extra OWS is technically valid per RFC
+                    return TestVerdict.Warn;
+                }
+            }
+        };
+
+        yield return new TestCase
+        {
+            Id = "SMUG-TE-CASE-MISMATCH",
+            Description = "Transfer-Encoding: Chunked (capital C) with CL — case-insensitive is valid",
+            Category = TestCategory.Smuggling,
+            PayloadFactory = ctx => MakeRequest(
+                $"POST / HTTP/1.1\r\nHost: {ctx.HostHeader}\r\nTransfer-Encoding: Chunked\r\nContent-Length: 5\r\n\r\nhello"),
+            Expected = new ExpectedBehavior
+            {
+                CustomValidator = (response, state) =>
+                {
+                    if (response is null)
+                        return state == ConnectionState.ClosedByServer ? TestVerdict.Pass : TestVerdict.Fail;
+                    if (response.StatusCode >= 400)
+                        return TestVerdict.Pass;
+                    // Case-insensitive matching is valid per RFC
+                    return TestVerdict.Warn;
+                }
+            }
+        };
     }
 
     private static byte[] MakeRequest(string request) => Encoding.ASCII.GetBytes(request);

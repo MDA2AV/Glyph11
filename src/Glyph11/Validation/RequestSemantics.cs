@@ -130,8 +130,10 @@ public static class RequestSemantics
     }
 
     /// <summary>
-    /// Returns true if any Content-Length header value contains non-digit characters.
-    /// (RFC 9110 §8.6 — Content-Length = 1*DIGIT)
+    /// Returns true if any Content-Length header value is not valid per
+    /// RFC 9110 §8.6 / RFC 9112 §6.2: 1*DIGIT with optional comma-separated duplicates.
+    /// Rejects empty values, non-digit characters (including +/-), leading zeros,
+    /// and trailing commas.
     /// </summary>
     public static bool HasInvalidContentLengthFormat(BinaryRequest request)
     {
@@ -142,30 +144,74 @@ public static class RequestSemantics
             if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, ContentLengthName))
                 continue;
 
-            var value = headers[i].Value.Span;
-            if (value.Length == 0)
+            if (!IsValidContentLengthValue(headers[i].Value.Span))
                 return true;
-
-            int j = 0;
-            while (j < value.Length)
-            {
-                byte b = value[j];
-                // Allow digits and comma+OWS for RFC 9112 §6.2 comma-separated form
-                if (b == (byte)',')
-                {
-                    j++;
-                    // Skip OWS after comma
-                    while (j < value.Length && (value[j] == (byte)' ' || value[j] == (byte)'\t'))
-                        j++;
-                    continue;
-                }
-                if (b < (byte)'0' || b > (byte)'9')
-                    return true;
-                j++;
-            }
         }
 
         return false;
+    }
+
+    // Max digits in ulong.MaxValue (18446744073709551615)
+    private const int MaxContentLengthDigits = 20;
+
+    private static bool IsValidContentLengthValue(ReadOnlySpan<byte> value)
+    {
+        if (value.IsEmpty) return false;
+
+        int pos = 0;
+        while (pos < value.Length)
+        {
+            // Skip OWS before each element
+            while (pos < value.Length && (value[pos] == (byte)' ' || value[pos] == (byte)'\t'))
+                pos++;
+
+            if (pos >= value.Length) return false;
+
+            // Must start with a digit
+            byte b = value[pos];
+            if (b < (byte)'0' || b > (byte)'9') return false;
+
+            // Reject leading zeros: "0" is ok, "00" or "007" is not
+            int digitStart = pos;
+            if (value[pos] == (byte)'0')
+            {
+                pos++;
+                if (pos < value.Length && value[pos] >= (byte)'0' && value[pos] <= (byte)'9')
+                    return false; // leading zero
+            }
+            else
+            {
+                pos++;
+                while (pos < value.Length && value[pos] >= (byte)'0' && value[pos] <= (byte)'9')
+                    pos++;
+            }
+
+            // Reject values that overflow ulong
+            int digitCount = pos - digitStart;
+            if (digitCount > MaxContentLengthDigits)
+                return false;
+            if (digitCount == MaxContentLengthDigits)
+            {
+                // Compare against "18446744073709551615" (ulong.MaxValue)
+                ReadOnlySpan<byte> ulongMax = "18446744073709551615"u8;
+                for (int j = 0; j < MaxContentLengthDigits; j++)
+                {
+                    if (value[digitStart + j] > ulongMax[j]) return false;
+                    if (value[digitStart + j] < ulongMax[j]) break;
+                }
+            }
+
+            // Skip OWS after the number
+            while (pos < value.Length && (value[pos] == (byte)' ' || value[pos] == (byte)'\t'))
+                pos++;
+
+            // Must be end or comma
+            if (pos >= value.Length) return true;
+            if (value[pos] != (byte)',') return false;
+            pos++; // skip comma
+        }
+
+        return false; // trailing comma with nothing after
     }
 
     /// <summary>

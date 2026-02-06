@@ -35,10 +35,10 @@ public class RequestSemanticsTests : IDisposable
         Assert.False(RequestSemantics.HasDotSegments(_request));
     }
 
-    // ---- HasOverlongUtf8: 3-byte overlong (0xE0 + < 0xA0) ----
+    // ---- Non-ASCII in request-target: now rejected by parser ----
 
     [Fact]
-    public void OverlongUtf8_E0_3Byte()
+    public void OverlongUtf8_E0_3Byte_RejectedByParser()
     {
         var header = "GET "u8.ToArray();
         var path = new byte[] { 0x2F, 0xE0, 0x80, 0xAF }; // overlong 3-byte
@@ -49,14 +49,12 @@ public class RequestSemanticsTests : IDisposable
         tail.CopyTo(all, header.Length + path.Length);
 
         ReadOnlyMemory<byte> rom = all;
-        HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _);
-        Assert.True(RequestSemantics.HasOverlongUtf8(_request));
+        Assert.Throws<HttpParseException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in Defaults, out _));
     }
 
-    // ---- HasOverlongUtf8: 4-byte overlong (0xF0 + < 0x90) ----
-
     [Fact]
-    public void OverlongUtf8_F0_4Byte()
+    public void OverlongUtf8_F0_4Byte_RejectedByParser()
     {
         var header = "GET "u8.ToArray();
         var path = new byte[] { 0x2F, 0xF0, 0x80, 0x80, 0xAF }; // overlong 4-byte
@@ -67,14 +65,12 @@ public class RequestSemanticsTests : IDisposable
         tail.CopyTo(all, header.Length + path.Length);
 
         ReadOnlyMemory<byte> rom = all;
-        HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _);
-        Assert.True(RequestSemantics.HasOverlongUtf8(_request));
+        Assert.Throws<HttpParseException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in Defaults, out _));
     }
 
-    // ---- HasOverlongUtf8: 0xC1 ----
-
     [Fact]
-    public void OverlongUtf8_C1()
+    public void OverlongUtf8_C1_RejectedByParser()
     {
         var header = "GET "u8.ToArray();
         var path = new byte[] { 0x2F, 0xC1, 0xAF };
@@ -85,8 +81,8 @@ public class RequestSemanticsTests : IDisposable
         tail.CopyTo(all, header.Length + path.Length);
 
         ReadOnlyMemory<byte> rom = all;
-        HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _);
-        Assert.True(RequestSemantics.HasOverlongUtf8(_request));
+        Assert.Throws<HttpParseException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in Defaults, out _));
     }
 
     // ---- HasInvalidContentLengthFormat: comma-separated with OWS ----
@@ -110,11 +106,8 @@ public class RequestSemanticsTests : IDisposable
     [Fact]
     public void LeadingZeros_CommaSeparatedWithLeadingZero()
     {
-        // Now rejected at parse time by HardenedParser
-        ReadOnlyMemory<byte> rom = System.Text.Encoding.ASCII.GetBytes(
-            "GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n");
-        Assert.Throws<HttpParseException>(
-            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in Defaults, out _));
+        ParseRom("GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n");
+        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
     }
 
     [Fact]

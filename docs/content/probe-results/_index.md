@@ -34,7 +34,7 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
 
 ## Glossary
 
-<div id="glossary"></div>
+<div id="glossary" style="padding-bottom:4em;"></div>
 
 <script src="/Glyph11/probe/data.js"></script>
 <script>

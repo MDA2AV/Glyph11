@@ -403,6 +403,106 @@ jobs:
                 'expected': '400/close/timeout',
                 'reason': 'Empty request — server must not crash, may timeout'
             },
+            'RFC9112-3-MISSING-TARGET': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Missing request-target is malformed (RFC 9112 §3)'
+            },
+            'RFC9112-3.2-FRAGMENT-IN-TARGET': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Fragment in request-target is invalid (RFC 9112 §3.2)'
+            },
+            'RFC9112-2.3-HTTP09-REQUEST': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': True,
+                'expected': '400/close/timeout',
+                'reason': 'HTTP/0.9 requests must be rejected (RFC 9112 §2.3)'
+            },
+            'RFC9112-5-INVALID-HEADER-NAME': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Invalid characters in header name must be rejected (RFC 9112 §5)'
+            },
+            'RFC9112-5-HEADER-NO-COLON': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Header line without colon is malformed (RFC 9112 §5)'
+            },
+            'RFC9110-5.4-DUPLICATE-HOST': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Duplicate Host headers with different values must be rejected (RFC 9110 §5.4)'
+            },
+            'RFC9112-6.1-CL-NON-NUMERIC': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Non-numeric Content-Length is invalid (RFC 9112 §6.1)'
+            },
+            'RFC9112-6.1-CL-PLUS-SIGN': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Content-Length with + sign is invalid (RFC 9112 §6.1)'
+            },
+            'SMUG-TECL-PIPELINE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'TE.CL smuggling vector — ambiguous framing must be rejected'
+            },
+            'SMUG-CL-TRAILING-SPACE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Trailing space in CL — OWS trimming is valid per RFC, but strict rejects'
+            },
+            'SMUG-HEADER-INJECTION': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Apparent CRLF injection — actually two valid headers, strict rejects'
+            },
+            'SMUG-TE-DOUBLE-CHUNKED': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Duplicate chunked TE with CL is ambiguous — must reject'
+            },
+            'SMUG-CL-EXTRA-LEADING-SP': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Extra leading whitespace in CL value is ambiguous'
+            },
+            'SMUG-TE-CASE-MISMATCH': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Case-mismatched TE "Chunked" with CL is ambiguous'
+            },
+            'MAL-LONG-HEADER-NAME': {
+                'accept': [400, 431], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400/431 or close',
+                'reason': '100 KB header name exceeds any reasonable limit'
+            },
+            'MAL-LONG-METHOD': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': '100 KB method name exceeds any reasonable limit'
+            },
+            'MAL-NON-ASCII-HEADER-NAME': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Non-ASCII bytes in header name are invalid'
+            },
+            'MAL-NON-ASCII-URL': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Non-ASCII bytes in URL are invalid'
+            },
+            'MAL-CL-OVERFLOW': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': False,
+                'expected': '400 or close',
+                'reason': 'Integer overflow in Content-Length must be rejected'
+            },
+            'MAL-WHITESPACE-ONLY-LINE': {
+                'accept': [400], 'close_ok': True, 'timeout_ok': True,
+                'expected': '400/close/timeout',
+                'reason': 'Whitespace-only request line is not valid HTTP'
+            },
         }
 
         # ── Evaluate one server's results ────────────────────────────
