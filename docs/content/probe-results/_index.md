@@ -32,6 +32,10 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
 
 <div id="table-malformed"></div>
 
+## Glossary
+
+<div id="glossary"></div>
+
 <script src="/Glyph11/probe/data.js"></script>
 <script>
 (function () {
@@ -83,12 +87,14 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
   var FAIL_BG = '#cf222e';
   var SKIP_BG = '#656d76';
   var EXPECT_BG = '#444c56';
-  var cellCss = 'text-align:center;padding:2px 3px;font-size:11px;font-weight:600;color:#fff;';
-  var pillCss = cellCss + 'border-radius:3px;min-width:28px;display:inline-block;line-height:18px;';
+  var pillCss = 'text-align:center;padding:2px 4px;font-size:11px;font-weight:600;color:#fff;border-radius:3px;min-width:28px;display:inline-block;line-height:18px;';
 
   function pill(bg, label) {
     return '<span style="' + pillCss + 'background:' + bg + ';">' + label + '</span>';
   }
+
+  // Track all tests for glossary
+  var allTests = [];
 
   function renderTable(targetId, categoryKey) {
     var el = document.getElementById(targetId);
@@ -105,15 +111,18 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
       return tid.replace(/^(RFC\d+-[\d.]+-|COMP-|SMUG-|MAL-)/, '');
     });
 
+    // Collect for glossary
+    catTests.forEach(function (tid) { allTests.push(tid); });
+
     var t = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:12px;white-space:nowrap;">';
 
-    // ── Column header row (test IDs, rotated) ──
+    // ── Column header row (test IDs, horizontal) ──
     t += '<thead><tr>';
     t += '<th style="padding:4px 8px;text-align:left;vertical-align:bottom;min-width:100px;"></th>';
     catTests.forEach(function (tid, i) {
       var first = lookup[names[0]][tid];
-      t += '<th style="padding:2px 3px;vertical-align:bottom;text-align:center;" title="' + first.description + '">';
-      t += '<span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:500;letter-spacing:-0.3px;">' + shortLabels[i] + '</span>';
+      t += '<th style="padding:3px 4px;text-align:center;vertical-align:bottom;">';
+      t += '<a href="#test-' + tid + '" style="font-size:10px;font-weight:500;color:inherit;text-decoration:none;" title="' + first.description + '">' + shortLabels[i] + '</a>';
       t += '</th>';
     });
     t += '</tr></thead><tbody>';
@@ -150,5 +159,28 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
   renderTable('table-compliance', 'Compliance');
   renderTable('table-smuggling', 'Smuggling');
   renderTable('table-malformed', 'MalformedInput');
+
+  // ── Glossary ────────────────────────────────────────────────────────
+  var glossaryEl = document.getElementById('glossary');
+  if (glossaryEl && allTests.length > 0) {
+    var g = '<table style="border-collapse:collapse;font-size:13px;width:100%;">';
+    g += '<thead><tr>';
+    g += '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid #d0d7de;width:260px;">Test ID</th>';
+    g += '<th style="text-align:center;padding:6px 8px;border-bottom:2px solid #d0d7de;width:100px;">Expected</th>';
+    g += '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid #d0d7de;">Description</th>';
+    g += '</tr></thead><tbody>';
+    allTests.forEach(function (tid) {
+      var r = lookup[names[0]][tid];
+      if (!r) return;
+      var rfc = r.rfc ? ' <span style="color:#656d76;font-size:11px;">(' + r.rfc + ')</span>' : '';
+      g += '<tr id="test-' + tid + '" style="border-bottom:1px solid #f0f0f0;">';
+      g += '<td style="padding:5px 8px;"><code style="font-size:12px;">' + tid + '</code>' + rfc + '</td>';
+      g += '<td style="text-align:center;padding:5px 8px;">' + pill(EXPECT_BG, r.expected) + '</td>';
+      g += '<td style="padding:5px 8px;">' + r.reason + '</td>';
+      g += '</tr>';
+    });
+    g += '</tbody></table>';
+    glossaryEl.innerHTML = g;
+  }
 })();
 </script>
