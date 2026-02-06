@@ -39,6 +39,35 @@ No validation — parsing only.
 | 1KB     | 213.0 ns            | 142.3 ns            | 1.50x    |
 | 4KB     | 675.8 ns            | 415.2 ns            | 1.63x    |
 
+## RequestSemantics
+
+Post-parse semantic validation checks run against an already-parsed `BinaryRequest`. Header-scanning checks scale linearly with header count; path-scanning checks are constant-time since the path length is fixed across payload sizes.
+
+### Header-scanning checks
+
+| Method | Small (~80B) | 4KB | 32KB |
+|--------|------------:|-----------:|-----------:|
+| HasConflictingContentLength | 6.9 ns | 26.5 ns | 208.4 ns |
+| HasTransferEncodingWithContentLength | 6.4 ns | 30.8 ns | 199.5 ns |
+| HasInvalidHostHeaderCount | 2.0 ns | 20.2 ns | 154.4 ns |
+| HasInvalidContentLengthFormat | 7.6 ns | 18.7 ns | 152.6 ns |
+| HasContentLengthWithLeadingZeros | 7.6 ns | 18.9 ns | 154.7 ns |
+| HasConflictingCommaSeparatedContentLength | 9.2 ns | 25.6 ns | 156.2 ns |
+| HasInvalidTransferEncoding | 2.4 ns | 25.7 ns | 157.8 ns |
+
+### Path-scanning checks
+
+| Method | Small (~80B) | 4KB | 32KB |
+|--------|------------:|-----------:|-----------:|
+| HasDotSegments | 2.4 ns | 2.5 ns | 2.6 ns |
+| HasFragmentInRequestTarget | 1.2 ns | 1.4 ns | 1.3 ns |
+| HasBackslashInPath | 1.4 ns | 1.3 ns | 1.3 ns |
+| HasDoubleEncoding | 1.2 ns | 1.2 ns | 1.2 ns |
+| HasEncodedNullByte | 1.2 ns | 1.2 ns | 1.2 ns |
+| HasOverlongUtf8 | 2.5 ns | 2.5 ns | 2.5 ns |
+
+All checks are **zero-allocation**. Running all 13 checks on a typical small request adds ~60 ns total overhead.
+
 ## Key Takeaways
 
 - **ROM path is always zero-allocation** — no GC pressure regardless of request size

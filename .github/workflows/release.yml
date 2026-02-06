@@ -13,44 +13,46 @@ jobs:
 
     name: Build & Publish Packages
 
-    runs-on: windows-latest  
+    runs-on: windows-latest
 
     environment:
       name: production
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 10.0
+          dotnet-version: |
+            8.0
+            9.0
+            10.0
 
       - name: Setup NuGet CLI
-        uses: NuGet/setup-nuget@v2
+        uses: NuGet/setup-nuget@323ab0502cd38fdc493335025a96c8fdb0edc71f # v2
 
       - name: Restore dependencies
         run: dotnet restore
         working-directory: src
 
       - name: Build solution
-        run: dotnet build --configuration Release --no-restore      
+        run: dotnet build --configuration Release --no-restore
         working-directory: src
 
       - name: Pack
-        run: dotnet pack --configuration Release -p:ContinuousIntegrationBuild=true --no-build --output ./artifacts 
+        run: dotnet pack --configuration Release -p:ContinuousIntegrationBuild=true --no-build --output ./artifacts
         working-directory: src
 
       - name: List gathered packages
-        run: dir artifacts  
+        run: dir artifacts
         working-directory: src
 
       - name: Publish packages to NuGet
         working-directory: src/artifacts
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push *.nupkg -k "$env:NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate 
-
+        run: dotnet nuget push *.nupkg -k "$env:NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate

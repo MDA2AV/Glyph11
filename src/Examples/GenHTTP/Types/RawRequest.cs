@@ -1,10 +1,7 @@
-﻿using GenHTTP.Api.Draft.Protocol.Raw;
-
+﻿using GenHTTP.Protocol.Raw;
 using Glyph11.Protocol;
 
-namespace GenHTTP.Engine.Draft.Types;
-
-using System;
+namespace GenHTTP.Types;
 
 public sealed class RawRequest : IRawRequest
 {

@@ -8,6 +8,7 @@ A complete integration pattern showing how to use Glyph11 with `System.IO.Pipeli
 ```csharp
 using System.Buffers;
 using System.IO.Pipelines;
+using Glyph11;
 using Glyph11.Protocol;
 using Glyph11.Parser.Hardened;
 using Glyph11.Validation;
@@ -46,15 +47,15 @@ public class RequestHandler
 
             // Post-parse security checks
             if (RequestSemantics.HasTransferEncodingWithContentLength(_request))
-                throw new InvalidOperationException("Request smuggling attempt.");
+                throw new HttpParseException("Request smuggling attempt.");
 
             if (RequestSemantics.HasDotSegments(_request))
-                throw new InvalidOperationException("Path traversal attempt.");
+                throw new HttpParseException("Path traversal attempt.");
 
             buffer = buffer.Slice(bytesRead);
             return true;
         }
-        catch (InvalidOperationException)
+        catch (HttpParseException)
         {
             // Protocol violation — close connection
             throw;

@@ -4,21 +4,50 @@ Glyph11 is a dependency free, low allocation HTTP/1.1 parser for C#. It does not
 
 [![NuGet](https://img.shields.io/nuget/v/Glyph11.svg)](https://www.nuget.org/packages/Glyph11/)
 [![Docs](https://img.shields.io/badge/docs-online-blue)](https://MDA2AV.github.io/Glyph11/)
+[![Coverage](https://img.shields.io/sonar/coverage/MDA2AV_Glyph11?server=https%3A%2F%2Fsonarcloud.io)](https://sonarcloud.io/summary/new_code?id=MDA2AV_Glyph11)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MDA2AV_Glyph11&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MDA2AV_Glyph11)
 
 ## Usage
 
+Glyph11 works with any source that produces a `ReadOnlySequence<byte>` or `ReadOnlyMemory<byte>` — `PipeReader`, `Socket`, `NetworkStream`, or raw byte arrays.
+
 ```csharp
-ReadOnlySequence<byte> buffer = ...; // e.g. read from pipe reader
+using System.Buffers;
+using Glyph11;
+using Glyph11.Protocol;
+using Glyph11.Parser.Hardened;
+using Glyph11.Validation;
 
 var request = new BinaryRequest();
 var limits = ParserLimits.Default;
 
-if (HardenedParser.TryExtractFullHeader(ref buffer, request, in limits, out var bytesRead))
+ReadOnlySequence<byte> buffer = ...; // from any network source
+
+if (HardenedParser.TryExtractFullHeader(ref buffer, request, in limits, out int bytesRead))
 {
-    // handle the request and access request.Path, .Body etc.
-    // advance the reader by bytesRead
+    // All parsed fields are zero-copy slices into the original buffer:
+    // request.Method.Span  → e.g. "GET"
+    // request.Path.Span    → e.g. "/api/users"
+    // request.Version.Span → e.g. "HTTP/1.1"
+    // request.Headers      → KeyValueList of name/value pairs
+    // request.QueryParameters → KeyValueList of query params
+
+    // Run post-parse semantic checks on untrusted input:
+    if (RequestSemantics.HasTransferEncodingWithContentLength(request))
+        throw new HttpParseException("Request smuggling: TE + CL.");
+
+    if (RequestSemantics.HasDotSegments(request))
+        throw new HttpParseException("Path traversal detected.");
+
+    // Process request, then advance your reader by bytesRead.
+
+    // Reuse between requests — clear instead of reallocating:
+    request.Headers.Clear();
+    request.QueryParameters.Clear();
 }
 ```
+
+For a complete `PipeReader` integration loop, see the [integration guide](https://MDA2AV.github.io/Glyph11/docs/getting-started/integration/).
 
 ## Parsers
 

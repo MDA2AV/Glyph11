@@ -1,8 +1,7 @@
-﻿using GenHTTP.Api.Draft.Protocol.Raw;
-
+﻿using GenHTTP.Protocol.Raw;
 using Glyph11.Protocol;
 
-namespace GenHTTP.Engine.Draft.Types;
+namespace GenHTTP.Types;
 
 public sealed class RawKeyValueList(KeyValueList source) : IRawKeyValueList
 {

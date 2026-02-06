@@ -1,9 +1,7 @@
 using System.Buffers;
 using System.Text;
-
-using GenHTTP.Api.Draft.Protocol;
-
-using GenHTTP.Engine.Draft.Types;
+using GenHTTP.Protocol;
+using GenHTTP.Types;
 using Glyph11.Parser.FlexibleParser;
 using Glyph11.Protocol;
 
@@ -115,13 +113,4 @@ public class FlexibleParserTryExtractFullHeader_ROM
 
         return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
     }
-}
-
-static class AssertAscii
-{
-    public static void Equal(string expectedAscii, ReadOnlyMemory<byte> actual)
-        => Assert.Equal(expectedAscii, Encoding.ASCII.GetString(actual.Span));
-
-    public static void Equal(string expectedAscii, ReadOnlySpan<byte> actual)
-        => Assert.Equal(expectedAscii, Encoding.ASCII.GetString(actual));
 }

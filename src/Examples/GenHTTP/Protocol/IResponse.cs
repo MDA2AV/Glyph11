@@ -1,4 +1,4 @@
-﻿namespace GenHTTP.Api.Draft.Protocol;
+﻿namespace GenHTTP.Protocol;
 
 public interface IResponse
 {

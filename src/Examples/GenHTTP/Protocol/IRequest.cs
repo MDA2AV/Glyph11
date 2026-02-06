@@ -1,6 +1,6 @@
-﻿using GenHTTP.Api.Draft.Protocol.Raw;
+﻿using GenHTTP.Protocol.Raw;
 
-namespace GenHTTP.Api.Draft.Protocol;
+namespace GenHTTP.Protocol;
 
 public interface IRequest
 {

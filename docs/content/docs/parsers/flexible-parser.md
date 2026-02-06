@@ -34,7 +34,7 @@ bool ok = FlexibleParser.TryExtractFullHeaderReadOnlyMemory(
 
 - Returns `false` if the header is incomplete (no `\r\n\r\n` terminator found). This is not an error — the caller should wait for more data.
 - Returns `true` when a complete header has been parsed. `bytesReadCount` indicates how many bytes were consumed.
-- Throws `InvalidOperationException` only for structurally unparseable input (missing request line spaces).
+- Throws `HttpParseException` only for structurally unparseable input (missing request line spaces).
 
 ## Behavior
 

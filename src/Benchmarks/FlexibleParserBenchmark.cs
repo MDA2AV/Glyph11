@@ -7,7 +7,7 @@ using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
-using GenHTTP.Engine.Draft.Types;
+using GenHTTP.Types;
 using Glyph11.Parser.FlexibleParser;
 
 namespace Benchmarks;
@@ -53,35 +53,25 @@ public class FlexibleParserBenchmark
 
     private ReadOnlyMemory<byte> _memory;
 
-    // ---- Large headers: 1KB, 4KB, 16KB, 32KB ----
+    // ---- Large headers: 4KB, 32KB ----
 
-    private static readonly byte[] _header1K = BenchmarkData.BuildHeader(1024);
     private static readonly byte[] _header4K = BenchmarkData.BuildHeader(4096);
-    private static readonly byte[] _header16K = BenchmarkData.BuildHeader(16384);
     private static readonly byte[] _header32K = BenchmarkData.BuildHeader(32768);
 
-    private ReadOnlyMemory<byte> _rom1K;
     private ReadOnlyMemory<byte> _rom4K;
-    private ReadOnlyMemory<byte> _rom16K;
     private ReadOnlyMemory<byte> _rom32K;
 
-    private ReadOnlySequence<byte> _seg1K;
     private ReadOnlySequence<byte> _seg4K;
-    private ReadOnlySequence<byte> _seg16K;
     private ReadOnlySequence<byte> _seg32K;
 
     public FlexibleParserBenchmark()
     {
         _memory = _buffer.ToArray();
 
-        _rom1K = _header1K;
         _rom4K = _header4K;
-        _rom16K = _header16K;
         _rom32K = _header32K;
 
-        _seg1K = BenchmarkData.ToThreeSegments(_header1K);
         _seg4K = BenchmarkData.ToThreeSegments(_header4K);
-        _seg16K = BenchmarkData.ToThreeSegments(_header16K);
         _seg32K = BenchmarkData.ToThreeSegments(_header32K);
     }
 
@@ -113,22 +103,6 @@ public class FlexibleParserBenchmark
         FlexibleParser.TryExtractFullHeader(ref _segmentedBuffer, _into.Source, out _);
     }
 
-    // ---- 1KB ----
-
-    [Benchmark]
-    public void Header1K_ROM()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom1K, _into.Source, out _);
-    }
-
-    [Benchmark]
-    public void Header1K_MultiSegment()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg1K, _into.Source, out _);
-    }
-
     // ---- 4KB ----
 
     [Benchmark]
@@ -145,32 +119,16 @@ public class FlexibleParserBenchmark
         FlexibleParser.TryExtractFullHeader(ref _seg4K, _into.Source, out _);
     }
 
-    // ---- 16KB ----
-
-    //[Benchmark]
-    public void Header16K_ROM()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom16K, _into.Source, out _);
-    }
-
-    //[Benchmark]
-    public void Header16K_MultiSegment()
-    {
-        _into.Reset();
-        FlexibleParser.TryExtractFullHeader(ref _seg16K, _into.Source, out _);
-    }
-
     // ---- 32KB ----
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom32K, _into.Source, out _);
     }
 
-    //[Benchmark]
+    [Benchmark]
     public void Header32K_MultiSegment()
     {
         _into.Reset();

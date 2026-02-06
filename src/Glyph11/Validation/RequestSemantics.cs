@@ -146,19 +146,22 @@ public static class RequestSemantics
             if (value.Length == 0)
                 return true;
 
-            for (int j = 0; j < value.Length; j++)
+            int j = 0;
+            while (j < value.Length)
             {
                 byte b = value[j];
                 // Allow digits and comma+OWS for RFC 9112 §6.2 comma-separated form
                 if (b == (byte)',')
                 {
+                    j++;
                     // Skip OWS after comma
-                    while (j + 1 < value.Length && (value[j + 1] == (byte)' ' || value[j + 1] == (byte)'\t'))
+                    while (j < value.Length && (value[j] == (byte)' ' || value[j] == (byte)'\t'))
                         j++;
                     continue;
                 }
                 if (b < (byte)'0' || b > (byte)'9')
                     return true;
+                j++;
             }
         }
 
