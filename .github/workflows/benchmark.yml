@@ -56,7 +56,7 @@ jobs:
                 data = json.load(fh)
             for b in data.get('Benchmarks', []):
                 alloc = b.get('Memory', {}).get('BytesAllocatedPerOperation', 0)
-                if alloc and alloc > 0:
+                if alloc is not None:
                     alloc_entries.append({
                         'FullName': b['FullName'] + '.Allocated',
                         'Statistics': {'Mean': float(alloc), 'StandardDeviation': 0.0},
@@ -79,6 +79,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         gh-pages-branch: gh-pages
         benchmark-data-dir-path: benchmarks
+        max-items-in-chart: 15
         alert-threshold: '115%'
         fail-on-alert: true
         comment-on-alert: true
@@ -135,7 +136,7 @@ jobs:
                 data = json.load(fh)
             for b in data.get('Benchmarks', []):
                 alloc = b.get('Memory', {}).get('BytesAllocatedPerOperation', 0)
-                if alloc and alloc > 0:
+                if alloc is not None:
                     alloc_entries.append({
                         'FullName': b['FullName'] + '.Allocated',
                         'Statistics': {'Mean': float(alloc), 'StandardDeviation': 0.0},
@@ -159,6 +160,7 @@ jobs:
         auto-push: ${{ github.ref == 'refs/heads/main' }}
         gh-pages-branch: gh-pages
         benchmark-data-dir-path: benchmarks
+        max-items-in-chart: 15
         alert-threshold: '115%'
         fail-on-alert: true
         comment-on-alert: true
