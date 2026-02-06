@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770393442995,
+  "lastUpdate": 1770395112487,
   "repoUrl": "https://github.com/MDA2AV/Glyph11",
   "entries": {
     "Benchmark": [
@@ -1148,6 +1148,208 @@ window.BENCHMARK_DATA = {
           {
             "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment.Allocated",
             "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "committer": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "id": "448882638684c2a2874e9f52cc324002029fb52b",
+          "message": "Redesign benchmarks to make whole process faster",
+          "timestamp": "2026-02-06T16:20:06Z",
+          "url": "https://github.com/MDA2AV/Glyph11/commit/448882638684c2a2874e9f52cc324002029fb52b"
+        },
+        "date": 1770395111467,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_Small",
+            "value": 124.52594955762227,
+            "unit": "ns",
+            "range": "± 1.6529850996648727"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_4K",
+            "value": 336.13216002782184,
+            "unit": "ns",
+            "range": "± 0.9353123195761416"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_32K",
+            "value": 2345.408072153727,
+            "unit": "ns",
+            "range": "± 5.158078790342918"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM",
+            "value": 137.50190273920694,
+            "unit": "ns",
+            "range": "± 2.7350421337536788"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment",
+            "value": 348.67463397979736,
+            "unit": "ns",
+            "range": "± 2.6083385264372807"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM",
+            "value": 729.3329470952352,
+            "unit": "ns",
+            "range": "± 1.254629278480962"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment",
+            "value": 1765.1705595652263,
+            "unit": "ns",
+            "range": "± 18.284309215503896"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM",
+            "value": 5061.218129475911,
+            "unit": "ns",
+            "range": "± 19.73965997778566"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment",
+            "value": 11921.92594909668,
+            "unit": "ns",
+            "range": "± 122.42788763418872"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM",
+            "value": 185.81203317642212,
+            "unit": "ns",
+            "range": "± 0.9101338295917762"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment",
+            "value": 421.6858188311259,
+            "unit": "ns",
+            "range": "± 5.430430258492038"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM",
+            "value": 1034.3252779642742,
+            "unit": "ns",
+            "range": "± 48.46257363476736"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment",
+            "value": 2206.7521375020347,
+            "unit": "ns",
+            "range": "± 23.477398073640252"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM",
+            "value": 7454.432028452556,
+            "unit": "ns",
+            "range": "± 22.68549638433203"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment",
+            "value": 15753.356536865234,
+            "unit": "ns",
+            "range": "± 138.99249592086858"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_Small.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_4K.Allocated",
+            "value": 0,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.AllSemanticChecksBenchmark.AllChecks_32K.Allocated",
+            "value": 0,
             "unit": "ns",
             "range": "± 0"
           }
