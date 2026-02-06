@@ -17,5 +17,5 @@ Glyph11 is a dependency-free, low-allocation HTTP/1.1 header parser for C#. It o
   {{< card link="parsers" title="Parsers" subtitle="HardenedParser usage, validation, and limits." >}}
   {{< card link="security" title="Security" subtitle="Post-parse validation and attack detection." >}}
   {{< card link="api-reference" title="API Reference" subtitle="Complete type and method signatures." >}}
-  {{< card link="performance" title="Performance" subtitle="Benchmarks and optimization tips." >}}
+  {{< card link="performance" title="Performance" subtitle="Design characteristics and optimization tips." >}}
 {{< /cards >}}

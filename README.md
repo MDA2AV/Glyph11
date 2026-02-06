@@ -59,26 +59,8 @@ Glyph11 ships two parsers:
 
 ## Performance
 
-### HardenedParser
+- **ROM path is zero-allocation** — no GC pressure regardless of request size
+- **SIMD-accelerated validation** keeps the HardenedParser within ~1.4-1.6x of the unvalidated FlexibleParser
+- **Multi-segment linearization** provides ROM-speed parsing with a single upfront allocation
 
-| Method                | Mean        | Gen0   | Allocated |
-|---------------------- |------------:|-------:|----------:|
-| Small_ROM (~80B)      |    93.5 ns  |      - |       0 B |
-| Small_MultiSegment    |   197.7 ns  | 0.0057 |     112 B |
-| Header1K_ROM          |   213.0 ns  |      - |       0 B |
-| Header1K_MultiSegment |   409.9 ns  | 0.0558 |   1,056 B |
-| Header4K_ROM          |   675.8 ns  |      - |       0 B |
-| Header4K_MultiSegment | 1,455.0 ns  | 0.2193 |   4,128 B |
-
-### FlexibleParser
-
-| Method                | Mean        | Gen0   | Allocated |
-|---------------------- |------------:|-------:|----------:|
-| Small_ROM (~80B)      |    68.8 ns  |      - |       0 B |
-| Small_MultiSegment    |   171.2 ns  | 0.0057 |     112 B |
-| Header1K_ROM          |   142.3 ns  |      - |       0 B |
-| Header1K_MultiSegment |   311.1 ns  | 0.0558 |   1,056 B |
-| Header4K_ROM          |   415.2 ns  |      - |       0 B |
-| Header4K_MultiSegment |   930.9 ns  | 0.2193 |   4,128 B |
-
-The HardenedParser adds ~1.4-1.6x overhead over FlexibleParser for full RFC compliance, SIMD-accelerated validation, and resource limit enforcement.
+See the [live benchmarks](https://MDA2AV.github.io/Glyph11/benchmarks/) for latest numbers and trend charts.

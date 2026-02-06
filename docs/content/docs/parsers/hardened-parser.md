@@ -73,7 +73,7 @@ Common versions (`HTTP/1.1`, `HTTP/1.0`) are cached as static byte arrays to avo
 
 Validation uses SIMD-accelerated `SearchValues<byte>` with `IndexOfAnyExcept` for token and field-value character checks, and vectorized `IndexOf` for bare-LF detection. This keeps the overhead to ~1.4-1.6x over the unvalidated `FlexibleParser`.
 
-See [Performance](../performance) for detailed benchmarks.
+See the [Benchmarks](/Glyph11/benchmarks/) page for detailed numbers and trend charts.
 
 ## Multi-Segment Handling
 
