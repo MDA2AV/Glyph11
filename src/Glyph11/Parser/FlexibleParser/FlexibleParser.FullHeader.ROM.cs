@@ -21,15 +21,15 @@ public static partial class FlexibleParser
         if (headerEnd < 0) return false;
 
         int requestLineEnd = slicedInputSpan.IndexOf(Crlf);
-        if (requestLineEnd < 0) throw new InvalidOperationException("Invalid HTTP/1.1 request line.");
+        if (requestLineEnd < 0) throw new HttpParseException("Invalid HTTP/1.1 request line.");
 
         var requestLine = slicedInputSpan[..requestLineEnd];
 
         int firstSpaceIndex = requestLine.IndexOf(Space);
-        if (firstSpaceIndex < 0) throw new InvalidOperationException("Invalid request line.");
+        if (firstSpaceIndex < 0) throw new HttpParseException("Invalid request line.");
 
         int secondSpaceRelativeIndex = requestLine[(firstSpaceIndex + 1)..].IndexOf(Space);
-        if (secondSpaceRelativeIndex < 0) throw new InvalidOperationException("Invalid request line.");
+        if (secondSpaceRelativeIndex < 0) throw new HttpParseException("Invalid request line.");
 
         int secondSpaceIndex = firstSpaceIndex + 1 + secondSpaceRelativeIndex;
 
@@ -81,7 +81,7 @@ public static partial class FlexibleParser
         while (true)
         {
             int lineLen = slicedInputSpan[lineStart..].IndexOf(Crlf);
-            if (lineLen < 0) throw new InvalidOperationException("Invalid headers.");
+            if (lineLen < 0) throw new HttpParseException("Invalid headers.");
 
             if (lineLen == 0)
                 break;

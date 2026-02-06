@@ -34,7 +34,7 @@ Entry point that auto-dispatches based on segment layout. If the input is a sing
 
 **Returns:** `true` if a complete header was parsed; `false` if the header is incomplete (waiting for more data).
 
-**Throws:** `InvalidOperationException` for structurally unparseable input.
+**Throws:** `HttpParseException` for structurally unparseable input.
 
 ---
 
@@ -59,4 +59,4 @@ Single-segment parser operating on contiguous memory. Zero-allocation — all pa
 
 **Returns:** `true` if a complete header was parsed; `false` if the header is incomplete.
 
-**Throws:** `InvalidOperationException` for structurally unparseable input.
+**Throws:** `HttpParseException` for structurally unparseable input.

@@ -6,7 +6,7 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
-using GenHTTP.Engine.Draft.Types;
+using GenHTTP.Types;
 using Glyph11.Parser.FlexibleParser;
 
 namespace Benchmarks;

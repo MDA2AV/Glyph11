@@ -1,6 +1,6 @@
 using System.Buffers;
 using BenchmarkDotNet.Attributes;
-using GenHTTP.Engine.Draft.Types;
+using GenHTTP.Types;
 using Glyph11.Parser;
 using Glyph11.Parser.Hardened;
 

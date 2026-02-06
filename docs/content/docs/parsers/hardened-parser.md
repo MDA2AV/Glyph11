@@ -33,7 +33,7 @@ bool ok = HardenedParser.TryExtractFullHeaderROM(
 
 - Returns `false` if the header is incomplete (no `\r\n\r\n` terminator found). This is not an error — the caller should wait for more data.
 - Returns `true` when a complete header has been parsed. `bytesReadCount` indicates how many bytes were consumed.
-- Throws `InvalidOperationException` with a descriptive message for any protocol violation.
+- Throws `HttpParseException` with a descriptive message for any protocol violation.
 
 ## Validation Rules
 

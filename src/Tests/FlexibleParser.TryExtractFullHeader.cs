@@ -1,9 +1,7 @@
 using System.Buffers;
 using System.Text;
-
-using GenHTTP.Api.Draft.Protocol;
-
-using GenHTTP.Engine.Draft.Types;
+using GenHTTP.Protocol;
+using GenHTTP.Types;
 using Glyph11.Parser.FlexibleParser;
 using Glyph11.Protocol;
 

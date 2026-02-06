@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Text;
+using Glyph11;
 using Glyph11.Parser.FlexibleParser;
 using Glyph11.Protocol;
 using Glyph11.Utils;
@@ -116,7 +117,7 @@ public class FlexibleParserHeaderCompliance : IDisposable
     [InlineData(true)]
     public void Throws_RequestLineWithNoSpaces(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("INVALIDLINE\r\n\r\n", multi));
     }
 
@@ -126,7 +127,7 @@ public class FlexibleParserHeaderCompliance : IDisposable
     public void Throws_RequestLineWithSingleSpace(bool multi)
     {
         // Missing HTTP-version component
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET /path\r\n\r\n", multi));
     }
 

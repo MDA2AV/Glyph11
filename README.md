@@ -11,6 +11,7 @@ Glyph11 works with any source that produces a `ReadOnlySequence<byte>` or `ReadO
 
 ```csharp
 using System.Buffers;
+using Glyph11;
 using Glyph11.Protocol;
 using Glyph11.Parser.Hardened;
 using Glyph11.Validation;
@@ -31,10 +32,10 @@ if (HardenedParser.TryExtractFullHeader(ref buffer, request, in limits, out int 
 
     // Run post-parse semantic checks on untrusted input:
     if (RequestSemantics.HasTransferEncodingWithContentLength(request))
-        throw new InvalidOperationException("Request smuggling: TE + CL.");
+        throw new HttpParseException("Request smuggling: TE + CL.");
 
     if (RequestSemantics.HasDotSegments(request))
-        throw new InvalidOperationException("Path traversal detected.");
+        throw new HttpParseException("Path traversal detected.");
 
     // Process request, then advance your reader by bytesRead.
 

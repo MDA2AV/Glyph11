@@ -9,7 +9,7 @@ namespace Glyph11.Parser.Hardened;
 /// <para>
 /// Validates method and header-name tokens, field-value characters,
 /// HTTP version format, and enforces size/count limits. Throws
-/// <see cref="InvalidOperationException"/> on any protocol violation.
+/// <see cref="HttpParseException"/> on any protocol violation.
 /// </para>
 /// </summary>
 [SkipLocalsInit]
