@@ -18,7 +18,7 @@ Glyph11 provides two HTTP/1.1 header parsers with different security/performance
 | **Bare LF rejection** | Yes | No |
 | **Obs-fold rejection** | Yes | No |
 | **HTTP version** | Format validated (`HTTP/X.Y`) | Not validated |
-| **Malformed lines** | Throws `InvalidOperationException` | Silently skipped |
+| **Malformed lines** | Throws `HttpParseException` | Silently skipped |
 | **Multi-segment** | Auto-linearizes to ROM path | Auto-linearizes to ROM path |
 | **SIMD-accelerated** | Yes (`SearchValues<byte>`) | N/A |
 

@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Text;
+using Glyph11;
 using Glyph11.Protocol;
 using Glyph11.Parser;
 using Glyph11.Parser.Hardened;
@@ -122,7 +123,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_RequestLineWithNoSpaces(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("INVALIDLINE\r\n\r\n", multi));
     }
 
@@ -131,7 +132,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_RequestLineWithSingleSpace(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET /path\r\n\r\n", multi));
     }
 
@@ -472,7 +473,7 @@ public class HardenedParserTests : IDisposable
     [InlineData("1.1", false), InlineData("1.1", true)]
     public void Throws_InvalidHttpVersion(string version, bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse($"GET / {version}\r\n\r\n", multi));
     }
 
@@ -490,7 +491,7 @@ public class HardenedParserTests : IDisposable
     public void Throws_MethodWithSpace(bool multi)
     {
         // "G T" as method — space is not a token character
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("G\x01T / HTTP/1.1\r\n\r\n", multi));
     }
 
@@ -499,7 +500,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_MethodWithControlChar(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GE\x01T / HTTP/1.1\r\n\r\n", multi));
     }
 
@@ -508,7 +509,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_HeaderNameWithControlChar(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nBad\x00Name: val\r\n\r\n", multi));
     }
 
@@ -518,7 +519,7 @@ public class HardenedParserTests : IDisposable
     public void Throws_HeaderNameWithAtSign(bool multi)
     {
         // '@' (0x40) is not a token character
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nBad@Name: val\r\n\r\n", multi));
     }
 
@@ -546,7 +547,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_HeaderValueWithNullByte(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nKey: val\x00ue\r\n\r\n", multi));
     }
 
@@ -555,7 +556,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_HeaderValueWithDEL(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nKey: val\x7Fue\r\n\r\n", multi));
     }
 
@@ -584,7 +585,7 @@ public class HardenedParserTests : IDisposable
     public void Throws_HeaderLineWithoutColon(bool multi)
     {
         // FlexibleParser silently skips these; HardenedParser throws
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<HttpParseException>(() =>
             Parse("GET / HTTP/1.1\r\nnocolonhere\r\n\r\n", multi));
     }
 
@@ -594,7 +595,7 @@ public class HardenedParserTests : IDisposable
     public void Throws_HeaderLineWithEmptyName(bool multi)
     {
         // ":value" — colon at position 0
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<HttpParseException>(() =>
             Parse("GET / HTTP/1.1\r\n:value\r\n\r\n", multi));
     }
 
@@ -619,7 +620,7 @@ public class HardenedParserTests : IDisposable
             "H3: v3\r\n" +
             "\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -652,7 +653,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxHeaderNameLength = 4 };
         var raw = "GET / HTTP/1.1\r\nLongName: val\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -668,7 +669,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxHeaderValueLength = 3 };
         var raw = "GET / HTTP/1.1\r\nKey: longvalue\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -684,7 +685,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxMethodLength = 3 };
         var raw = "POST / HTTP/1.1\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -712,7 +713,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxUrlLength = 5 };
         var raw = "GET /toolong HTTP/1.1\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -728,7 +729,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxQueryParameterCount = 2 };
         var raw = "GET /p?a=1&b=2&c=3 HTTP/1.1\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -757,7 +758,7 @@ public class HardenedParserTests : IDisposable
         var limits = Defaults with { MaxTotalHeaderBytes = 20 };
         var raw = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse(raw, multi, limits));
     }
 
@@ -1033,7 +1034,7 @@ public class HardenedParserTests : IDisposable
         // This contains \r\n\r\n at the end, so headerEnd will be found,
         // but the bare LF scan will catch the \n in "Host: x\n"
         ReadOnlyMemory<byte> rom = all;
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, Defaults, out _));
     }
 
@@ -1046,7 +1047,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_ObsFoldWithSpace(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nHost: x\r\n continued\r\n\r\n", multi));
     }
 
@@ -1055,7 +1056,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_ObsFoldWithTab(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nHost: x\r\n\tcontinued\r\n\r\n", multi));
     }
 
@@ -1068,7 +1069,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_SpaceBeforeColon(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nHost : localhost\r\n\r\n", multi));
     }
 
@@ -1077,7 +1078,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_TabBeforeColon(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET / HTTP/1.1\r\nHost\t: localhost\r\n\r\n", multi));
     }
 
@@ -1090,7 +1091,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_DoubleSpaceAfterMethod(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET  / HTTP/1.1\r\n\r\n", multi));
     }
 
@@ -1099,7 +1100,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_DoubleSpaceBeforeVersion(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET /  HTTP/1.1\r\n\r\n", multi));
     }
 
@@ -1112,7 +1113,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_NullByteInUrl(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET /path\x00evil HTTP/1.1\r\n\r\n", multi));
     }
 
@@ -1121,7 +1122,7 @@ public class HardenedParserTests : IDisposable
     [InlineData(true)]
     public void Throws_ControlCharInUrl(bool multi)
     {
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<HttpParseException>(
             () => Parse("GET /path\x01evil HTTP/1.1\r\n\r\n", multi));
     }
 

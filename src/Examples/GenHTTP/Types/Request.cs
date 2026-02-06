@@ -1,10 +1,9 @@
-﻿using GenHTTP.Api.Draft.Protocol;
-using GenHTTP.Api.Draft.Protocol.Raw;
-
+﻿using GenHTTP.Protocol;
+using GenHTTP.Protocol.Raw;
 using GenHTTP.Utils;
 using Glyph11.Protocol;
 
-namespace GenHTTP.Engine.Draft.Types;
+namespace GenHTTP.Types;
 
 public sealed class Request : IRequest
 {

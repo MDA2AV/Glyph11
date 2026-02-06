@@ -9,7 +9,7 @@ Glyph11 provides two layers of defense against HTTP/1.1 protocol attacks:
 
 ## Parse-Time Protections (HardenedParser)
 
-These checks are enforced automatically during `TryExtractFullHeader` / `TryExtractFullHeaderROM`. Violations throw `InvalidOperationException`.
+These checks are enforced automatically during `TryExtractFullHeader` / `TryExtractFullHeaderROM`. Violations throw `HttpParseException`.
 
 ### Bare LF Rejection
 
@@ -213,6 +213,7 @@ These checks are called explicitly after successful parsing. Each returns `true`
 ## Usage
 
 ```csharp
+using Glyph11;
 using Glyph11.Parser.Hardened;
 using Glyph11.Validation;
 
@@ -224,43 +225,43 @@ if (HardenedParser.TryExtractFullHeader(ref buffer, request, in limits, out var 
     // Now run post-parse semantic checks:
 
     if (RequestSemantics.HasInvalidHostHeaderCount(request))
-        throw new InvalidOperationException("Invalid Host header count.");
+        throw new HttpParseException("Invalid Host header count.");
 
     if (RequestSemantics.HasTransferEncodingWithContentLength(request))
-        throw new InvalidOperationException("Request smuggling: TE + CL.");
+        throw new HttpParseException("Request smuggling: TE + CL.");
 
     if (RequestSemantics.HasConflictingContentLength(request))
-        throw new InvalidOperationException("Conflicting Content-Length values.");
+        throw new HttpParseException("Conflicting Content-Length values.");
 
     if (RequestSemantics.HasConflictingCommaSeparatedContentLength(request))
-        throw new InvalidOperationException("Conflicting comma-separated Content-Length.");
+        throw new HttpParseException("Conflicting comma-separated Content-Length.");
 
     if (RequestSemantics.HasInvalidContentLengthFormat(request))
-        throw new InvalidOperationException("Invalid Content-Length format.");
+        throw new HttpParseException("Invalid Content-Length format.");
 
     if (RequestSemantics.HasContentLengthWithLeadingZeros(request))
-        throw new InvalidOperationException("Content-Length has leading zeros.");
+        throw new HttpParseException("Content-Length has leading zeros.");
 
     if (RequestSemantics.HasInvalidTransferEncoding(request))
-        throw new InvalidOperationException("Invalid Transfer-Encoding value.");
+        throw new HttpParseException("Invalid Transfer-Encoding value.");
 
     if (RequestSemantics.HasDotSegments(request))
-        throw new InvalidOperationException("Path traversal detected.");
+        throw new HttpParseException("Path traversal detected.");
 
     if (RequestSemantics.HasBackslashInPath(request))
-        throw new InvalidOperationException("Backslash in path.");
+        throw new HttpParseException("Backslash in path.");
 
     if (RequestSemantics.HasDoubleEncoding(request))
-        throw new InvalidOperationException("Double encoding detected.");
+        throw new HttpParseException("Double encoding detected.");
 
     if (RequestSemantics.HasEncodedNullByte(request))
-        throw new InvalidOperationException("Encoded null byte in path.");
+        throw new HttpParseException("Encoded null byte in path.");
 
     if (RequestSemantics.HasOverlongUtf8(request))
-        throw new InvalidOperationException("Overlong UTF-8 in path.");
+        throw new HttpParseException("Overlong UTF-8 in path.");
 
     if (RequestSemantics.HasFragmentInRequestTarget(request))
-        throw new InvalidOperationException("Fragment in request-target.");
+        throw new HttpParseException("Fragment in request-target.");
 
     // Safe to process request
 }

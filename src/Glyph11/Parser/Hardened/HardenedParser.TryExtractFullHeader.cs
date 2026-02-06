@@ -18,7 +18,7 @@ public static partial class HardenedParser
     /// <param name="limits">Resource limits to enforce during parsing.</param>
     /// <param name="bytesReadCount">Bytes consumed on success, or -1 if incomplete.</param>
     /// <returns><c>true</c> if a complete header was parsed; <c>false</c> if more data is needed.</returns>
-    /// <exception cref="InvalidOperationException">Thrown on any protocol violation or limit breach.</exception>
+    /// <exception cref="HttpParseException">Thrown on any protocol violation or limit breach.</exception>
     public static bool TryExtractFullHeader(
         ref ReadOnlySequence<byte> input, BinaryRequest request,
         in ParserLimits limits, out int bytesReadCount)

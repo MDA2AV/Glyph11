@@ -1,4 +1,4 @@
-﻿namespace GenHTTP.Api.Draft.Protocol.Raw;
+﻿namespace GenHTTP.Protocol.Raw;
 
 public interface IRawRequest
 {

@@ -7,7 +7,7 @@ public static partial class HardenedParser
 {
     /// <summary>
     /// Hot path — single-segment parse with full security validation.
-    /// Returns false if incomplete; throws InvalidOperationException if structurally invalid.
+    /// Returns false if incomplete; throws HttpParseException if structurally invalid.
     /// </summary>
     [SkipLocalsInit]
     public static bool TryExtractFullHeaderROM(
@@ -22,43 +22,43 @@ public static partial class HardenedParser
 
         int totalHeaderBytes = headerEnd + 4;
         if (totalHeaderBytes > limits.MaxTotalHeaderBytes)
-            throw new InvalidOperationException("Total header size exceeds limit.");
+            throw new HttpParseException("Total header size exceeds limit.");
 
         // ---- Request line: METHOD SP URL SP VERSION CRLF ----
 
         int requestLineEnd = span.IndexOf(Crlf);
         if (requestLineEnd < 0)
-            throw new InvalidOperationException("Invalid HTTP/1.1 request line.");
+            throw new HttpParseException("Invalid HTTP/1.1 request line.");
 
         var requestLine = span[..requestLineEnd];
 
         // ---- Reject bare LF in request line — RFC 9112 §2.2 ----
         if (requestLine.IndexOf((byte)'\n') >= 0)
-            throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
+            throw new HttpParseException("Bare LF detected; only CRLF line endings are allowed.");
 
         int firstSpace = requestLine.IndexOf(Space);
         if (firstSpace < 0)
-            throw new InvalidOperationException("Invalid request line: missing method.");
+            throw new HttpParseException("Invalid request line: missing method.");
 
         int secondSpaceRel = requestLine[(firstSpace + 1)..].IndexOf(Space);
         if (secondSpaceRel < 0)
-            throw new InvalidOperationException("Invalid request line: missing version.");
+            throw new HttpParseException("Invalid request line: missing version.");
 
         int secondSpace = firstSpace + 1 + secondSpaceRel;
 
         // ---- Reject multiple spaces in request line — RFC 9112 §3 ----
         // After the method, only one SP is allowed before the URL, and one before the version.
         if (secondSpace > firstSpace + 1 && requestLine[firstSpace + 1] == Space)
-            throw new InvalidOperationException("Multiple spaces in request line.");
+            throw new HttpParseException("Multiple spaces in request line.");
         if (secondSpace + 1 < requestLine.Length && requestLine[secondSpace + 1] == Space)
-            throw new InvalidOperationException("Multiple spaces in request line.");
+            throw new HttpParseException("Multiple spaces in request line.");
 
         // --- Method ---
         var methodSpan = requestLine[..firstSpace];
         if (methodSpan.Length == 0 || methodSpan.Length > limits.MaxMethodLength)
-            throw new InvalidOperationException("Method length exceeds limit.");
+            throw new HttpParseException("Method length exceeds limit.");
         if (!IsValidToken(methodSpan))
-            throw new InvalidOperationException("Method contains invalid token characters.");
+            throw new HttpParseException("Method contains invalid token characters.");
 
         request.Method = input[..firstSpace];
 
@@ -66,18 +66,18 @@ public static partial class HardenedParser
         int urlStart = firstSpace + 1;
         int urlLen = secondSpace - urlStart;
         if (urlLen > limits.MaxUrlLength)
-            throw new InvalidOperationException("URL length exceeds limit.");
+            throw new HttpParseException("URL length exceeds limit.");
 
         var urlSpan = requestLine.Slice(urlStart, urlLen);
 
         // --- Validate request-target for control characters (NUL, etc.) ---
         if (!IsValidRequestTarget(urlSpan))
-            throw new InvalidOperationException("Request-target contains invalid characters.");
+            throw new HttpParseException("Request-target contains invalid characters.");
 
         // --- Version ---
         var versionSpan = requestLine[(secondSpace + 1)..];
         if (!IsValidHttpVersion(versionSpan))
-            throw new InvalidOperationException("Invalid HTTP version.");
+            throw new HttpParseException("Invalid HTTP version.");
 
         request.Version = input.Slice(secondSpace + 1, versionSpan.Length);
 
@@ -106,7 +106,7 @@ public static partial class HardenedParser
                 if (eq > 0)
                 {
                     if (++paramCount > limits.MaxQueryParameterCount)
-                        throw new InvalidOperationException("Query parameter count exceeds limit.");
+                        throw new HttpParseException("Query parameter count exceeds limit.");
 
                     request.QueryParameters.Add(
                         input.Slice(pairAbsStart, eq),
@@ -130,7 +130,7 @@ public static partial class HardenedParser
         {
             int lineLen = span[lineStart..].IndexOf(Crlf);
             if (lineLen < 0)
-                throw new InvalidOperationException("Invalid headers.");
+                throw new HttpParseException("Invalid headers.");
 
             if (lineLen == 0)
                 break;
@@ -139,29 +139,29 @@ public static partial class HardenedParser
 
             // ---- Reject bare LF in header line — RFC 9112 §2.2 ----
             if (line.IndexOf((byte)'\n') >= 0)
-                throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
+                throw new HttpParseException("Bare LF detected; only CRLF line endings are allowed.");
 
             // ---- Reject obs-fold (line starting with SP/HTAB) — RFC 9112 §5.2 ----
             if (line[0] == (byte)' ' || line[0] == (byte)'\t')
-                throw new InvalidOperationException("Obsolete line folding (obs-fold) is not allowed.");
+                throw new HttpParseException("Obsolete line folding (obs-fold) is not allowed.");
 
             int colon = line.IndexOf(Colon);
 
             if (colon <= 0)
-                throw new InvalidOperationException(colon == 0
+                throw new HttpParseException(colon == 0
                     ? "Header name is empty."
                     : "Malformed header line: missing colon.");
 
             // ---- Reject whitespace between field-name and colon — RFC 9112 §5.1 ----
             if (line[colon - 1] == (byte)' ' || line[colon - 1] == (byte)'\t')
-                throw new InvalidOperationException("Whitespace between header name and colon is not allowed.");
+                throw new HttpParseException("Whitespace between header name and colon is not allowed.");
 
             // Validate header name
             var nameSpan = line[..colon];
             if (nameSpan.Length > limits.MaxHeaderNameLength)
-                throw new InvalidOperationException("Header name length exceeds limit.");
+                throw new HttpParseException("Header name length exceeds limit.");
             if (!IsValidToken(nameSpan))
-                throw new InvalidOperationException("Header name contains invalid token characters.");
+                throw new HttpParseException("Header name contains invalid token characters.");
 
             // Trim leading OWS from value
             int valAbsStart = lineStart + colon + 1;
@@ -177,12 +177,12 @@ public static partial class HardenedParser
             // Validate header value
             var valueSpan = span.Slice(valAbsStart, valLen);
             if (valLen > limits.MaxHeaderValueLength)
-                throw new InvalidOperationException("Header value length exceeds limit.");
+                throw new HttpParseException("Header value length exceeds limit.");
             if (!IsValidFieldValue(valueSpan))
-                throw new InvalidOperationException("Header value contains invalid characters.");
+                throw new HttpParseException("Header value contains invalid characters.");
 
             if (++headerCount > limits.MaxHeaderCount)
-                throw new InvalidOperationException("Header count exceeds limit.");
+                throw new HttpParseException("Header count exceeds limit.");
 
             request.Headers.Add(
                 input.Slice(lineStart, colon),

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <IsPackable>false</IsPackable>
-        <RootNamespace>GinHTTP</RootNamespace>
+        <RootNamespace>GenHTTP</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
