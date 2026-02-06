@@ -25,46 +25,6 @@ public static partial class HardenedParser
     private const byte QuerySeparator = 0x26; // '&'
     private const byte Equal = 0x3D;
     private const byte Colon = 0x3A;
-    private const byte Slash = 0x2F;
-    private const byte Dot = 0x2E;
-
-    // ---- HTTP version prefix ----
-    private static ReadOnlySpan<byte> HttpSlash => "HTTP/"u8;
-
-    // ---- Cached common HTTP versions (avoids ToArray alloc in ROS path) ----
-    private static readonly ReadOnlyMemory<byte> CachedHttp11 = "HTTP/1.1"u8.ToArray();
-    private static readonly ReadOnlyMemory<byte> CachedHttp10 = "HTTP/1.0"u8.ToArray();
-
-    /// <summary>
-    /// Returns a cached ReadOnlyMemory for HTTP/1.1 and HTTP/1.0, avoiding allocation.
-    /// Version must already be validated via IsValidHttpVersionSequence.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ReadOnlyMemory<byte> ResolveCachedVersion(in ReadOnlySequence<byte> seq)
-    {
-        byte major, minor;
-        if (seq.IsSingleSegment)
-        {
-            var span = seq.FirstSpan;
-            major = span[5];
-            minor = span[7];
-        }
-        else
-        {
-            Span<byte> buf = stackalloc byte[8];
-            seq.CopyTo(buf);
-            major = buf[5];
-            minor = buf[7];
-        }
-
-        if (major == (byte)'1')
-        {
-            if (minor == (byte)'1') return CachedHttp11;
-            if (minor == (byte)'0') return CachedHttp10;
-        }
-
-        return seq.ToArray();
-    }
 
     // ---- SIMD-accelerated character class validators (SearchValues<byte>) ----
 
@@ -138,54 +98,4 @@ public static partial class HardenedParser
     private static bool IsValidRequestTarget(ReadOnlySpan<byte> span)
         => span.IndexOfAnyExcept(RequestTargetSearchValues) < 0;
 
-    // ---- Validation helpers (ReadOnlySequence) ----
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsValidTokenSequence(in ReadOnlySequence<byte> seq)
-    {
-        if (seq.IsSingleSegment)
-            return IsValidToken(seq.FirstSpan);
-
-        var position = seq.Start;
-        var end = seq.End;
-        while (seq.TryGet(ref position, out ReadOnlyMemory<byte> memory))
-        {
-            if (!IsValidToken(memory.Span))
-                return false;
-            if (position.Equals(end))
-                break;
-        }
-        return true;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsValidFieldValueSequence(in ReadOnlySequence<byte> seq)
-    {
-        if (seq.IsSingleSegment)
-            return IsValidFieldValue(seq.FirstSpan);
-
-        var position = seq.Start;
-        var end = seq.End;
-        while (seq.TryGet(ref position, out ReadOnlyMemory<byte> memory))
-        {
-            if (!IsValidFieldValue(memory.Span))
-                return false;
-            if (position.Equals(end))
-                break;
-        }
-        return true;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsValidHttpVersionSequence(in ReadOnlySequence<byte> seq)
-    {
-        if (seq.Length != 8)
-            return false;
-        if (seq.IsSingleSegment)
-            return IsValidHttpVersion(seq.FirstSpan);
-
-        Span<byte> buf = stackalloc byte[8];
-        seq.CopyTo(buf);
-        return IsValidHttpVersion(buf);
-    }
 }
