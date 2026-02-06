@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
@@ -24,12 +25,15 @@ public static class Program
             // optional but useful (removes your other warnings)
             AddLogger(ConsoleLogger.Default);
             AddExporter(MarkdownExporter.Default);
+            AddExporter(JsonExporter.FullCompressed);
             AddColumnProvider(DefaultColumnProviders.Instance);
         }
     }
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run([ typeof(FlexibleParserBenchmark), typeof(HardenedParserBenchmark), typeof(RequestSemanticsBenchmark) ], new FastConfig());
+        BenchmarkSwitcher
+            .FromAssembly(typeof(Program).Assembly)
+            .Run(args, new FastConfig());
     }
 }
 

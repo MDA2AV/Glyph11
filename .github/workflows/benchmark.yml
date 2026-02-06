@@ -1,0 +1,89 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  parsers:
+
+    name: Parser Benchmarks
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0
+
+    - name: Run parser benchmarks
+      run: dotnet run -c Release -- --filter '*FlexibleParserBenchmark*' '*HardenedParserBenchmark*'
+      working-directory: src/Benchmarks
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: parser-benchmark-results
+        path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
+
+    - name: Combine benchmark JSON results
+      run: |
+        jq -s '{ Benchmarks: [ .[].Benchmarks[] ] }' \
+          src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
+          > combined-benchmarks.json
+
+    - name: Compare against baseline
+      uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1
+      with:
+        tool: 'benchmarkdotnet'
+        output-file-path: combined-benchmarks.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: benchmarks
+        alert-threshold: '115%'
+        fail-on-alert: true
+        comment-on-alert: true
+        comment-always: ${{ github.event_name == 'pull_request' }}
+        summary-always: true
+
+  full:
+
+    name: Full Benchmarks
+
+    if: github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0
+
+    - name: Run all benchmarks
+      run: dotnet run -c Release -- --filter '*'
+      working-directory: src/Benchmarks
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: full-benchmark-results
+        path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
