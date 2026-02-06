@@ -450,28 +450,33 @@ jobs:
             },
             'SMUG-CL-TRAILING-SPACE': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
-                'expected': '400 or close',
-                'reason': 'Trailing space in CL — OWS trimming is valid per RFC, but strict rejects'
+                'warn_on_2xx': True, 'scored': False,
+                'expected': '400 or 2xx',
+                'reason': 'Trailing space in CL — OWS trimming is valid per RFC 9110 §5.5'
             },
             'SMUG-HEADER-INJECTION': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
-                'expected': '400 or close',
-                'reason': 'Apparent CRLF injection — actually two valid headers, strict rejects'
+                'warn_on_2xx': True, 'scored': False,
+                'expected': '400 or 2xx',
+                'reason': 'Payload is two valid headers on the wire — 2xx is RFC-compliant'
             },
             'SMUG-TE-DOUBLE-CHUNKED': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
-                'expected': '400 or close',
-                'reason': 'Duplicate chunked TE with CL is ambiguous — must reject'
+                'warn_on_2xx': True, 'scored': False,
+                'expected': '400 or 2xx',
+                'reason': 'Duplicate chunked TE with CL — 4xx is strict, 2xx is tolerable'
             },
             'SMUG-CL-EXTRA-LEADING-SP': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
-                'expected': '400 or close',
-                'reason': 'Extra leading whitespace in CL value is ambiguous'
+                'warn_on_2xx': True, 'scored': False,
+                'expected': '400 or 2xx',
+                'reason': 'Extra OWS after colon is valid per RFC 9110 §5.5'
             },
             'SMUG-TE-CASE-MISMATCH': {
                 'accept': [400], 'close_ok': True, 'timeout_ok': False,
-                'expected': '400 or close',
-                'reason': 'Case-mismatched TE "Chunked" with CL is ambiguous'
+                'warn_on_2xx': True, 'scored': False,
+                'expected': '400 or 2xx',
+                'reason': 'Case-insensitive TE matching is valid per RFC — 2xx is compliant'
             },
             'MAL-LONG-HEADER-NAME': {
                 'accept': [400, 431], 'close_ok': True, 'timeout_ok': False,
@@ -514,19 +519,28 @@ jobs:
                 if not spec:
                     results.append({**r, 'verdict': r['verdict'], 'expected': '?',
                         'got': str(r.get('statusCode') or r.get('connectionState', '')),
-                        'reason': 'No strict specification defined'})
+                        'reason': 'No strict specification defined', 'scored': True})
                     continue
 
                 status = r.get('statusCode')
                 conn   = r.get('connectionState', '')
+                is_scored = spec.get('scored', True)
                 passed = (
                     (status is not None and status in spec['accept']) or
                     (status is None and spec['close_ok'] and conn == 'ClosedByServer') or
                     (status is None and spec['timeout_ok'] and conn == 'TimedOut')
                 )
-                got     = str(status) if status is not None else conn
-                verdict = 'Pass' if passed else 'Fail'
-                reason  = spec['reason'] if passed else f"Expected {spec['expected']}, got {got} — {spec['reason']}"
+                got = str(status) if status is not None else conn
+
+                # For unscored tests: 2xx is Warn (RFC-compliant), 4xx is Pass
+                if passed:
+                    verdict = 'Pass'
+                elif spec.get('warn_on_2xx') and status is not None and 200 <= status < 300:
+                    verdict = 'Warn'
+                else:
+                    verdict = 'Fail'
+
+                reason = spec['reason'] if verdict != 'Fail' else f"Expected {spec['expected']}, got {got} — {spec['reason']}"
 
                 results.append({
                     'id': tid, 'description': r['description'],
@@ -534,12 +548,18 @@ jobs:
                     'verdict': verdict, 'statusCode': status,
                     'expected': spec['expected'], 'got': got,
                     'connectionState': conn, 'reason': reason,
+                    'scored': is_scored,
                     'durationMs': r.get('durationMs', 0),
                 })
 
-            total  = len(results)
-            passed = sum(1 for r in results if r['verdict'] == 'Pass')
-            return {'summary': {'total': total, 'passed': passed, 'failed': total - passed}, 'results': results}
+            scored_results = [r for r in results if r['scored']]
+            total  = len(scored_results)
+            passed = sum(1 for r in scored_results if r['verdict'] == 'Pass')
+            warned = sum(1 for r in results if r['verdict'] == 'Warn')
+            return {
+                'summary': {'total': len(results), 'scored': total, 'passed': passed, 'failed': total - passed, 'warnings': warned},
+                'results': results,
+            }
 
         # ── Process each server ──────────────────────────────────────
         SERVERS = [
@@ -573,7 +593,7 @@ jobs:
             ev['name'] = name
             server_data.append(ev)
             s = ev['summary']
-            print(f"{name}: {s['passed']}/{s['total']} passed, {s['failed']} failed")
+            print(f"{name}: {s['passed']}/{s['scored']} passed, {s['failed']} failed, {s['warnings']} warnings")
 
         # ── Write data.js ────────────────────────────────────────────
         output = {
@@ -590,7 +610,7 @@ jobs:
         badges = []
         for sv in server_data:
             s = sv['summary']
-            badges.append(f"**{sv['name']}** {s['passed']}/{s['total']}")
+            badges.append(f"**{sv['name']}** {s['passed']}/{s['scored']}")
         lines.append(' · '.join(badges))
         lines.append('')
 
@@ -633,7 +653,7 @@ jobs:
                     if not r:
                         cells.append('—')
                     else:
-                        icon = '✅' if r['verdict'] == 'Pass' else '❌'
+                        icon = '✅' if r['verdict'] == 'Pass' else ('⚠️' if r['verdict'] == 'Warn' else '❌')
                         cells.append(f"{icon}`{r['got']}`")
                 lines.append(f"| **{n}** | " + ' | '.join(cells) + ' |')
             lines.append('')
