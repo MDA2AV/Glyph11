@@ -31,7 +31,9 @@ public static class Program
     }
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run([ typeof(FlexibleParserBenchmark), typeof(HardenedParserBenchmark) ], new FastConfig());
+        BenchmarkSwitcher
+            .FromAssembly(typeof(Program).Assembly)
+            .Run(args, new FastConfig());
     }
 }
 

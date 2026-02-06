@@ -11,9 +11,9 @@ permissions:
 
 jobs:
 
-  benchmark:
+  parsers:
 
-    name: Run Benchmarks
+    name: Parser Benchmarks
 
     runs-on: ubuntu-latest
 
@@ -27,15 +27,15 @@ jobs:
       with:
         dotnet-version: 10.0
 
-    - name: Run benchmarks
-      run: dotnet run -c Release
+    - name: Run parser benchmarks
+      run: dotnet run -c Release -- --filter '*FlexibleParserBenchmark*' '*HardenedParserBenchmark*'
       working-directory: src/Benchmarks
 
     - name: Upload results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: benchmark-results
+        name: parser-benchmark-results
         path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
 
     - name: Combine benchmark JSON results
@@ -50,14 +50,40 @@ jobs:
         tool: 'benchmarkdotnet'
         output-file-path: combined-benchmarks.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        # Store baseline data in gh-pages branch
         auto-push: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
         gh-pages-branch: gh-pages
         benchmark-data-dir-path: benchmarks
-        # Alert if performance regresses by more than 15%
         alert-threshold: '115%'
         fail-on-alert: true
-        # Post comparison as PR comment
         comment-on-alert: true
         comment-always: ${{ github.event_name == 'pull_request' }}
         summary-always: true
+
+  full:
+
+    name: Full Benchmarks
+
+    if: github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0
+
+    - name: Run all benchmarks
+      run: dotnet run -c Release -- --filter '*'
+      working-directory: src/Benchmarks
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: full-benchmark-results
+        path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
