@@ -64,3 +64,39 @@ Glyph11 ships two parsers:
 - **Multi-segment linearization** provides ROM-speed parsing with a single upfront allocation
 
 See the [live benchmarks](https://MDA2AV.github.io/Glyph11/benchmarks/) for latest numbers and trend charts.
+
+## CI Workflows
+
+### Benchmarks
+
+The **Benchmark** workflow (`.github/workflows/benchmark.yml`) measures parser throughput and allocation using BenchmarkDotNet.
+
+| Trigger | Job | What it does |
+|---------|-----|--------------|
+| `pull_request` | **Parser Benchmarks** | Runs `FlexibleParserBenchmark` and `HardenedParserBenchmark`, compares against the baseline on `gh-pages`, and posts a comment on the PR. Fails if any metric regresses by more than 15%. |
+| `workflow_dispatch` | **Full Benchmarks** | Runs all benchmarks (parsers + `AllSemanticChecksBenchmark`), updates the baseline on `gh-pages`, and triggers a docs site rebuild. |
+
+**Data flow:** benchmark results are stored as `benchmarks/data.js` on the `gh-pages` branch. The docs site loads this file to render trend charts at [/benchmarks/](https://MDA2AV.github.io/Glyph11/benchmarks/).
+
+To publish updated benchmark data:
+
+1. Merge your changes to `main`.
+2. Go to **Actions > Benchmark > Run workflow** on `main`.
+
+### Compliance Probe
+
+The **Probe** workflow (`.github/workflows/probe.yml`) tests HTTP/1.1 compliance across multiple server frameworks using [Glyph11.Probe](src/Glyph11.Probe), a tool that sends malformed and ambiguous HTTP requests and checks the server's response against strict RFC 9110/9112 expectations.
+
+Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **GenHTTP**.
+
+| Trigger | What it does |
+|---------|--------------|
+| `pull_request` | Starts all three servers, probes each one, evaluates results with strict status-code matching (e.g. a parser error must return `400`, not `404`), and posts a comparison table as a PR comment. Never fails the build — this is informational. |
+| `workflow_dispatch` | Same as above, plus pushes `probe/data.js` to `gh-pages` and triggers a docs site rebuild. |
+
+**Data flow:** probe results are stored as `probe/data.js` on the `gh-pages` branch. The docs site loads this file to render the comparison matrix at [/probe-results/](https://MDA2AV.github.io/Glyph11/probe-results/).
+
+To publish updated probe data:
+
+1. Merge your changes to `main`.
+2. Go to **Actions > Probe > Run workflow** on `main`.

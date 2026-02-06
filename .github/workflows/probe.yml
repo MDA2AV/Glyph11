@@ -389,6 +389,8 @@ jobs:
     - name: Push to gh-pages
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git fetch origin gh-pages
         git worktree add /tmp/gh-pages gh-pages
         mkdir -p /tmp/gh-pages/probe
