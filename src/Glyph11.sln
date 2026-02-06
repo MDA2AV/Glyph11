@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "..\tests\Tests\Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenHTTP", "Examples\GenHTTP\GenHTTP.csproj", "{D6936307-4A8C-4636-ADA2-4761D101970E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{0DF18FBF-F275-4CA3-ACA6-E9D60E21DE6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "..\Benchmarks\Benchmarks.csproj", "{0DF18FBF-F275-4CA3-ACA6-E9D60E21DE6D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{B1832E06-A86C-42E2-BB12-CE83BDE6D77A}"
 EndProject
