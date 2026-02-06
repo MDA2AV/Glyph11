@@ -105,3 +105,49 @@ public class RequestSemanticsBenchmark
     [Benchmark] public bool InvalidTE_4K() => RequestSemantics.HasInvalidTransferEncoding(_4k);
     [Benchmark] public bool InvalidTE_32K() => RequestSemantics.HasInvalidTransferEncoding(_32k);
 }
+
+[MemoryDiagnoser]
+public class AllSemanticChecksBenchmark
+{
+    private static readonly ParserLimits Limits = ParserLimits.Default with { MaxTotalHeaderBytes = 64 * 1024, MaxHeaderCount = 200 };
+
+    private readonly BinaryRequest _small = new();
+    private readonly BinaryRequest _4k = new();
+    private readonly BinaryRequest _32k = new();
+
+    public AllSemanticChecksBenchmark()
+    {
+        Parse(_small, BenchmarkData.BuildSmallHeader());
+        Parse(_4k, BenchmarkData.BuildHeader(4096));
+        Parse(_32k, BenchmarkData.BuildHeader(32768));
+    }
+
+    private static void Parse(BinaryRequest into, byte[] data)
+    {
+        ReadOnlyMemory<byte> rom = data;
+        HardenedParser.TryExtractFullHeaderROM(ref rom, into, in Limits, out _);
+    }
+
+    private static bool RunAllChecks(BinaryRequest req)
+    {
+        bool result = false;
+        result |= RequestSemantics.HasConflictingContentLength(req);
+        result |= RequestSemantics.HasTransferEncodingWithContentLength(req);
+        result |= RequestSemantics.HasDotSegments(req);
+        result |= RequestSemantics.HasInvalidHostHeaderCount(req);
+        result |= RequestSemantics.HasInvalidContentLengthFormat(req);
+        result |= RequestSemantics.HasContentLengthWithLeadingZeros(req);
+        result |= RequestSemantics.HasConflictingCommaSeparatedContentLength(req);
+        result |= RequestSemantics.HasFragmentInRequestTarget(req);
+        result |= RequestSemantics.HasBackslashInPath(req);
+        result |= RequestSemantics.HasDoubleEncoding(req);
+        result |= RequestSemantics.HasEncodedNullByte(req);
+        result |= RequestSemantics.HasOverlongUtf8(req);
+        result |= RequestSemantics.HasInvalidTransferEncoding(req);
+        return result;
+    }
+
+    [Benchmark] public bool AllChecks_Small() => RunAllChecks(_small);
+    [Benchmark] public bool AllChecks_4K() => RunAllChecks(_4k);
+    [Benchmark] public bool AllChecks_32K() => RunAllChecks(_32k);
+}

@@ -74,27 +74,16 @@ These numbers are from CI runs (`ubuntu-latest`) and may differ from local resul
     fmtAlloc('Benchmarks.HardenedParserBenchmark.' + ms),
   ]);
 
-  // --- Header-scanning checks ---
-  const headerChecks = [
-    'ConflictingCL', 'TEWithCL', 'InvalidCLFormat', 'LeadingZerosCL',
-    'ConflictingCommaCL', 'InvalidTE', 'InvalidHost',
+  // --- RequestSemantics (combined) ---
+  const semSizes = [
+    ['Small', 'AllChecks_Small'],
+    ['4 KB',  'AllChecks_4K'],
+    ['32 KB', 'AllChecks_32K'],
   ];
-  const headerRows = headerChecks.map(name => [
-    name,
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_Small')),
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_4K')),
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_32K')),
-  ]);
-
-  // --- Path-scanning checks ---
-  const pathChecks = [
-    'DotSegments', 'Fragment', 'Backslash', 'DoubleEncoding', 'EncodedNull', 'OverlongUtf8',
-  ];
-  const pathRows = pathChecks.map(name => [
-    name,
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_Small')),
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_4K')),
-    fmt(val('Benchmarks.RequestSemanticsBenchmark.' + name + '_32K')),
+  const semRows = semSizes.map(([label, method]) => [
+    label,
+    fmt(val('Benchmarks.AllSemanticChecksBenchmark.' + method)) + ' ns',
+    fmtAlloc('Benchmarks.AllSemanticChecksBenchmark.' + method),
   ]);
 
   container.innerHTML =
@@ -103,10 +92,8 @@ These numbers are from CI runs (`ubuntu-latest`) and may differ from local resul
       ['Payload', 'Flexible (ROM)', 'Alloc', 'Flexible (MultiSeg)', 'Alloc', 'Hardened (ROM)', 'Alloc', 'Hardened (MultiSeg)', 'Alloc'],
       parserRows
     ) +
-    '<h3>RequestSemantics — Header-Scanning Checks</h3>' +
-    makeTable(['Check', 'Small (ns)', '4 KB (ns)', '32 KB (ns)'], headerRows) +
-    '<h3>RequestSemantics — Path-Scanning Checks</h3>' +
-    makeTable(['Check', 'Small (ns)', '4 KB (ns)', '32 KB (ns)'], pathRows);
+    '<h3>RequestSemantics (All Checks)</h3>' +
+    makeTable(['Payload', 'All Checks (ns)', 'Alloc'], semRows);
 })();
 </script>
 
