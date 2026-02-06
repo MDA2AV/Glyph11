@@ -19,17 +19,18 @@ public sealed class RawTcpClient : IAsyncDisposable
     {
         try
         {
+            using var cts = new CancellationTokenSource(_connectTimeout);
+            var addresses = await Dns.GetHostAddressesAsync(host, cts.Token);
+            var ipv4 = Array.Find(addresses, a => a.AddressFamily == AddressFamily.InterNetwork);
+            if (ipv4 is null)
+                return ConnectionState.Error;
+
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             {
                 NoDelay = true
             };
 
-            using var cts = new CancellationTokenSource(_connectTimeout);
-            var addresses = await Dns.GetHostAddressesAsync(host, cts.Token);
-            if (addresses.Length == 0)
-                return ConnectionState.Error;
-
-            await _socket.ConnectAsync(new IPEndPoint(addresses[0], port), cts.Token);
+            await _socket.ConnectAsync(new IPEndPoint(ipv4, port), cts.Token);
             return ConnectionState.Open;
         }
         catch (OperationCanceledException)
