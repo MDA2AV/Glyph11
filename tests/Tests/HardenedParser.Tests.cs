@@ -23,7 +23,11 @@ public partial class HardenedParserTests : IDisposable
     private readonly BinaryRequest _request = new();
     private static readonly ParserLimits Defaults = ParserLimits.Default;
 
-    public void Dispose() => _request.Dispose();
+    public void Dispose()
+    {
+        _request.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     private (bool success, int bytesRead) Parse(string raw, bool multiSegment)
         => Parse(raw, multiSegment, Defaults);

@@ -14,7 +14,11 @@ public class RequestSemanticsTests : IDisposable
     private readonly BinaryRequest _request = new();
     private static readonly ParserLimits Defaults = ParserLimits.Default;
 
-    public void Dispose() => _request.Dispose();
+    public void Dispose()
+    {
+        _request.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     private void ParseRom(string raw)
     {

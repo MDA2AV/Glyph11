@@ -63,7 +63,8 @@ public class KeyValueListTests
         HardenedParser.TryExtractFullHeaderROM(ref rom, request, in limits, out _);
 
         request.Dispose();
-        request.Dispose(); // should not throw
+        var ex = Record.Exception(() => request.Dispose());
+        Assert.Null(ex);
     }
 
     [Fact]
