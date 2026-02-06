@@ -4,6 +4,8 @@ Glyph11 is a dependency free, low allocation HTTP/1.1 parser for C#. It does not
 
 [![NuGet](https://img.shields.io/nuget/v/Glyph11.svg)](https://www.nuget.org/packages/Glyph11/)
 [![Docs](https://img.shields.io/badge/docs-online-blue)](https://MDA2AV.github.io/Glyph11/)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=MDA2AV_Glyph11&metric=coverage)](https://sonarcloud.io/summary/new_code?id=MDA2AV_Glyph11)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MDA2AV_Glyph11&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MDA2AV_Glyph11)
 
 ## Usage
 

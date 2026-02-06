@@ -42,6 +42,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"MDA2AV_Glyph11" /o:"mda2av" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-          dotnet build src/Glyph11.sln
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"MDA2AV_Glyph11" /o:"mda2av" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet build src/Glyph11.sln --no-incremental
+          dotnet test tests/Tests/Tests.csproj --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
