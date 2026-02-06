@@ -157,9 +157,12 @@
     title.textContent = shortName(benchName);
     card.appendChild(title);
 
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.height = '200px';
     const canvas = document.createElement('canvas');
-    canvas.height = 200;
-    card.appendChild(canvas);
+    wrapper.appendChild(canvas);
+    card.appendChild(wrapper);
 
     if (hasAlloc) {
       const legend = document.createElement('div');
