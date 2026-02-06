@@ -2,6 +2,12 @@ name: Benchmark
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
 
@@ -10,9 +16,6 @@ jobs:
     name: Run Benchmarks
 
     runs-on: ubuntu-latest
-
-    env:
-      DOTNET_ROLL_FORWARD: Major
 
     steps:
 
@@ -34,3 +37,27 @@ jobs:
       with:
         name: benchmark-results
         path: src/Benchmarks/BenchmarkDotNet.Artifacts/results/
+
+    - name: Combine benchmark JSON results
+      run: |
+        jq -s '[ .[] | .Benchmarks[] ]' \
+          src/Benchmarks/BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
+          > combined-benchmarks.json
+
+    - name: Compare against baseline
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'benchmarkdotnet'
+        output-file-path: combined-benchmarks.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        # Store baseline data in gh-pages branch
+        auto-push: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: benchmarks
+        # Alert if performance regresses by more than 15%
+        alert-threshold: '115%'
+        fail-on-alert: true
+        # Post comparison as PR comment
+        comment-on-alert: true
+        comment-always: ${{ github.event_name == 'pull_request' }}
+        summary-always: true
