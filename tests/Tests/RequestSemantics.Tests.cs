@@ -110,8 +110,11 @@ public class RequestSemanticsTests : IDisposable
     [Fact]
     public void LeadingZeros_CommaSeparatedWithLeadingZero()
     {
-        ParseRom("GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n");
-        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
+        // Now rejected at parse time by HardenedParser
+        ReadOnlyMemory<byte> rom = System.Text.Encoding.ASCII.GetBytes(
+            "GET / HTTP/1.1\r\nContent-Length: 42, 042\r\n\r\n");
+        Assert.Throws<HttpParseException>(
+            () => HardenedParser.TryExtractFullHeaderROM(ref rom, _request, in Defaults, out _));
     }
 
     [Fact]
