@@ -1,5 +1,6 @@
 ---
 title: Benchmarks
+layout: wide
 toc: false
 ---
 
