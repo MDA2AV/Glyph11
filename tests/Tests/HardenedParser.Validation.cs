@@ -32,11 +32,10 @@ public partial class HardenedParserTests
     [Theory]
     [InlineData("HTTP/2.0", false), InlineData("HTTP/2.0", true)]
     [InlineData("HTTP/9.9", false), InlineData("HTTP/9.9", true)]
-    public void AcceptsAnyValidHttpVersionDigits(string version, bool multi)
+    public void Throws_UnsupportedHttpVersion(string version, bool multi)
     {
-        var (ok, _) = Parse($"GET / {version}\r\n\r\n", multi);
-        Assert.True(ok);
-        AssertAscii.Equal(version, _request.Version);
+        Assert.Throws<HttpParseException>(
+            () => Parse($"GET / {version}\r\n\r\n", multi));
     }
 
     [Theory]
@@ -283,5 +282,37 @@ public partial class HardenedParserTests
     {
         Assert.Throws<HttpParseException>(
             () => Parse("GET /path\x01evil HTTP/1.1\r\n\r\n", multi));
+    }
+
+    // ================================================================
+    // Content-Length validation
+    // ================================================================
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_NegativeContentLength(bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: -1\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Throws_ContentLengthLeadingZeros(bool multi)
+    {
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: 005\r\n\r\n", multi));
+    }
+
+    [Theory]
+    [InlineData("0", false), InlineData("0", true)]
+    [InlineData("42", false), InlineData("42", true)]
+    public void AcceptsValidContentLength(string value, bool multi)
+    {
+        var (ok, _) = Parse($"GET / HTTP/1.1\r\nContent-Length: {value}\r\n\r\n", multi);
+        Assert.True(ok);
+        AssertHeader(_request.Headers, 0, "Content-Length", value);
     }
 }

@@ -1,3 +1,4 @@
+using Glyph11;
 using Glyph11.Parser.Hardened;
 using Glyph11.Validation;
 
@@ -222,8 +223,9 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_NonDigitContentLength(bool multi)
     {
-        Parse("GET / HTTP/1.1\r\nContent-Length: abc\r\n\r\n", multi);
-        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+        // Now rejected at parse time by HardenedParser
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: abc\r\n\r\n", multi));
     }
 
     [Theory]
@@ -231,8 +233,9 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_EmptyContentLength(bool multi)
     {
-        Parse("GET / HTTP/1.1\r\nContent-Length:\r\n\r\n", multi);
-        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+        // Now rejected at parse time by HardenedParser
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length:\r\n\r\n", multi));
     }
 
     [Theory]
@@ -240,8 +243,9 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_ContentLengthWithSpaces(bool multi)
     {
-        Parse("GET / HTTP/1.1\r\nContent-Length: 1 2\r\n\r\n", multi);
-        Assert.True(RequestSemantics.HasInvalidContentLengthFormat(_request));
+        // Now rejected at parse time by HardenedParser
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: 1 2\r\n\r\n", multi));
     }
 
     // ---- HasContentLengthWithLeadingZeros ----
@@ -260,8 +264,9 @@ public partial class HardenedParserTests
     [InlineData(true)]
     public void Semantics_LeadingZeros(bool multi)
     {
-        Parse("GET / HTTP/1.1\r\nContent-Length: 0200\r\n\r\n", multi);
-        Assert.True(RequestSemantics.HasContentLengthWithLeadingZeros(_request));
+        // Now rejected at parse time by HardenedParser
+        Assert.Throws<HttpParseException>(
+            () => Parse("GET / HTTP/1.1\r\nContent-Length: 0200\r\n\r\n", multi));
     }
 
     [Theory]
