@@ -1,7 +1,7 @@
 using System.Buffers;
 using Glyph11.Protocol;
 
-namespace Glyph11.Parser.FlexParser;
+namespace Glyph11.Parser.FlexibleParser;
 
 public static partial class FlexibleParser
 {

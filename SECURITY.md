@@ -17,7 +17,7 @@ These checks are enforced automatically during `TryExtractFullHeader` / `TryExtr
 
 **RFC:** 9112 Section 2.2 — "A recipient of such a bare CR MUST consider that element to be invalid."
 
-**Protection:** The parser scans the entire header section for any bare LF (0x0A not preceded by 0x0D) and rejects the request.
+**Protection:** The parser checks each parsed line for bare LF (0x0A) using vectorized `IndexOf`. Any bare LF causes immediate rejection.
 
 **CVEs prevented:** CVE-2023-30589 (Node.js), CVE-2025-58056 (Netty), CVE-2019-16785 (Waitress).
 
@@ -56,7 +56,7 @@ Transfer-Encoding: chunked\r\n
 
 **RFC:** 9112 Section 3.2 — request-target must contain only valid URI characters.
 
-**Protection:** Every byte of the request-target is checked; any control character causes rejection.
+**Protection:** The request-target is validated using SIMD-accelerated `SearchValues<byte>`; any control character causes rejection.
 
 ### Method Token Validation
 
@@ -64,7 +64,7 @@ Transfer-Encoding: chunked\r\n
 
 **RFC:** 9110 Section 5.6.2 — method is a `token` (`!#$%&'*+-.^_`|~ DIGIT ALPHA`).
 
-**Protection:** Every byte of the method is validated against the RFC 9110 token character set.
+**Protection:** The method is validated against the RFC 9110 token character set using SIMD-accelerated `SearchValues<byte>`.
 
 ### Header Name Token Validation
 
@@ -72,7 +72,7 @@ Transfer-Encoding: chunked\r\n
 
 **RFC:** 9110 Section 5.1 — field-name is a `token`.
 
-**Protection:** Every byte of each header name is validated against the token character set.
+**Protection:** Each header name is validated against the token character set using SIMD-accelerated `SearchValues<byte>`.
 
 ### Header Value Character Validation
 
@@ -80,7 +80,7 @@ Transfer-Encoding: chunked\r\n
 
 **RFC:** 9110 Section 5.5 — field-value allows only HTAB (0x09), SP (0x20), VCHAR (0x21-0x7E), and obs-text (0x80-0xFF).
 
-**Protection:** Every byte of each header value is validated against the allowed character set. CR, LF, NUL, and all other control characters are rejected.
+**Protection:** Each header value is validated against the allowed character set using SIMD-accelerated `SearchValues<byte>`. CR, LF, NUL, and all other control characters are rejected.
 
 **CVEs prevented:** CVE-2024-52875, CVE-2024-20337.
 

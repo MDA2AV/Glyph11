@@ -4,7 +4,7 @@ using System.IO.Pipelines;
 using GenHTTP.Engine.Draft.Types;
 
 using Glyph11.Parser;
-using Glyph11.Parser.FlexParser;
+using Glyph11.Parser.FlexibleParser;
 
 namespace GenHTTP.Engine.Draft.Parser;
 

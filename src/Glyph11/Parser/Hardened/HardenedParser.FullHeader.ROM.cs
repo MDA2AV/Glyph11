@@ -24,14 +24,6 @@ public static partial class HardenedParser
         if (totalHeaderBytes > limits.MaxTotalHeaderBytes)
             throw new InvalidOperationException("Total header size exceeds limit.");
 
-        // ---- Reject bare LF (0x0A without preceding 0x0D) — RFC 9112 §2.2 ----
-        var headerSection = span[..totalHeaderBytes];
-        for (int i = 0; i < headerSection.Length; i++)
-        {
-            if (headerSection[i] == (byte)'\n' && (i == 0 || headerSection[i - 1] != (byte)'\r'))
-                throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
-        }
-
         // ---- Request line: METHOD SP URL SP VERSION CRLF ----
 
         int requestLineEnd = span.IndexOf(Crlf);
@@ -39,6 +31,10 @@ public static partial class HardenedParser
             throw new InvalidOperationException("Invalid HTTP/1.1 request line.");
 
         var requestLine = span[..requestLineEnd];
+
+        // ---- Reject bare LF in request line — RFC 9112 §2.2 ----
+        if (requestLine.IndexOf((byte)'\n') >= 0)
+            throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
 
         int firstSpace = requestLine.IndexOf(Space);
         if (firstSpace < 0)
@@ -140,6 +136,10 @@ public static partial class HardenedParser
                 break;
 
             var line = span.Slice(lineStart, lineLen);
+
+            // ---- Reject bare LF in header line — RFC 9112 §2.2 ----
+            if (line.IndexOf((byte)'\n') >= 0)
+                throw new InvalidOperationException("Bare LF detected; only CRLF line endings are allowed.");
 
             // ---- Reject obs-fold (line starting with SP/HTAB) — RFC 9112 §5.2 ----
             if (line[0] == (byte)' ' || line[0] == (byte)'\t')
