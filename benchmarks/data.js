@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770387798103,
+  "lastUpdate": 1770392060704,
   "repoUrl": "https://github.com/MDA2AV/Glyph11",
   "entries": {
     "Benchmark": [
@@ -422,6 +422,370 @@ window.BENCHMARK_DATA = {
             "value": 293.51474046707153,
             "unit": "ns",
             "range": "± 0.1788330799845814"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "committer": {
+            "name": "Diogo Martins",
+            "username": "MDA2AV",
+            "email": "diogoalves@ua.pt"
+          },
+          "id": "16b735c74225857a41f33d8c77c9199ab402f033",
+          "message": "Reliability issues fix",
+          "timestamp": "2026-02-06T15:31:16Z",
+          "url": "https://github.com/MDA2AV/Glyph11/commit/16b735c74225857a41f33d8c77c9199ab402f033"
+        },
+        "date": 1770392059763,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_ROM",
+            "value": 136.913170337677,
+            "unit": "ns",
+            "range": "± 0.3070158566749537"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment",
+            "value": 340.23458433151245,
+            "unit": "ns",
+            "range": "± 0.6168609725471101"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_ROM",
+            "value": 684.1842740376791,
+            "unit": "ns",
+            "range": "± 0.8483191079167357"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment",
+            "value": 1838.9310309092205,
+            "unit": "ns",
+            "range": "± 18.497168325758615"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_ROM",
+            "value": 4806.936012268066,
+            "unit": "ns",
+            "range": "± 9.105937920403221"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment",
+            "value": 12322.325113932291,
+            "unit": "ns",
+            "range": "± 216.96764713444713"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_ROM",
+            "value": 181.01469333966574,
+            "unit": "ns",
+            "range": "± 0.6986390384505163"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment",
+            "value": 413.96568902333576,
+            "unit": "ns",
+            "range": "± 1.8713501147517078"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_ROM",
+            "value": 1069.9117399851482,
+            "unit": "ns",
+            "range": "± 5.833003313093619"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment",
+            "value": 2179.1628545125327,
+            "unit": "ns",
+            "range": "± 34.397429436795555"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_ROM",
+            "value": 6970.405616760254,
+            "unit": "ns",
+            "range": "± 0.03610197891006756"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment",
+            "value": 15531.965606689453,
+            "unit": "ns",
+            "range": "± 85.68370853307256"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_Small",
+            "value": 15.076026101907095,
+            "unit": "ns",
+            "range": "± 0.004124717523964248"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_4K",
+            "value": 68.42432916164398,
+            "unit": "ns",
+            "range": "± 0.05806576854411113"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCL_32K",
+            "value": 438.0877523422241,
+            "unit": "ns",
+            "range": "± 1.1390213559811568"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_Small",
+            "value": 15.036473045746485,
+            "unit": "ns",
+            "range": "± 0.045750539448305344"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_4K",
+            "value": 48.321660021940865,
+            "unit": "ns",
+            "range": "± 0.14549812228203127"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.TEWithCL_32K",
+            "value": 388.7991005579631,
+            "unit": "ns",
+            "range": "± 1.0928378206485057"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_Small",
+            "value": 4.988458688060443,
+            "unit": "ns",
+            "range": "± 0.006820527198897951"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_4K",
+            "value": 5.0130041142304735,
+            "unit": "ns",
+            "range": "± 0.037623097461316965"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DotSegments_32K",
+            "value": 4.992003654440244,
+            "unit": "ns",
+            "range": "± 0.006275804553243792"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_Small",
+            "value": 5.394268569846948,
+            "unit": "ns",
+            "range": "± 0.012419323348874153"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_4K",
+            "value": 38.21816724538803,
+            "unit": "ns",
+            "range": "± 0.02513650445180326"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidHost_32K",
+            "value": 293.2507774035136,
+            "unit": "ns",
+            "range": "± 0.16059052952662284"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_Small",
+            "value": 16.06959777077039,
+            "unit": "ns",
+            "range": "± 0.005960022490425844"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_4K",
+            "value": 37.381650964419045,
+            "unit": "ns",
+            "range": "± 0.030518157452220605"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidCLFormat_32K",
+            "value": 293.1926097869873,
+            "unit": "ns",
+            "range": "± 0.06971195965764562"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_Small",
+            "value": 16.142884731292725,
+            "unit": "ns",
+            "range": "± 0.09564546720009733"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_4K",
+            "value": 37.433843652407326,
+            "unit": "ns",
+            "range": "± 0.024246028680336457"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.LeadingZerosCL_32K",
+            "value": 294.0419742266337,
+            "unit": "ns",
+            "range": "± 1.7471758559823716"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_Small",
+            "value": 17.72376603881518,
+            "unit": "ns",
+            "range": "± 0.29544006531264816"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_4K",
+            "value": 41.46655682722727,
+            "unit": "ns",
+            "range": "± 0.6780224391085029"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.ConflictingCommaCL_32K",
+            "value": 292.998388449351,
+            "unit": "ns",
+            "range": "± 0.24901311373337595"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_Small",
+            "value": 3.518977696696917,
+            "unit": "ns",
+            "range": "± 0.01410591822541102"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_4K",
+            "value": 3.6011920273303986,
+            "unit": "ns",
+            "range": "± 0.017513692328263827"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Fragment_32K",
+            "value": 3.5025384748975434,
+            "unit": "ns",
+            "range": "± 0.0054502148786890955"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_Small",
+            "value": 3.526030123233795,
+            "unit": "ns",
+            "range": "± 0.016193053469671426"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_4K",
+            "value": 3.5424515356620154,
+            "unit": "ns",
+            "range": "± 0.011868443579875317"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.Backslash_32K",
+            "value": 3.505150211354097,
+            "unit": "ns",
+            "range": "± 0.005394134683740959"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_Small",
+            "value": 2.784232129653295,
+            "unit": "ns",
+            "range": "± 0.0032092430624218707"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_4K",
+            "value": 2.7956249912579856,
+            "unit": "ns",
+            "range": "± 0.0014980545339231387"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.DoubleEncoding_32K",
+            "value": 2.8091276536385217,
+            "unit": "ns",
+            "range": "± 0.024557725320240545"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_Small",
+            "value": 2.816566047569116,
+            "unit": "ns",
+            "range": "± 0.001822324455098512"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_4K",
+            "value": 2.803788614769777,
+            "unit": "ns",
+            "range": "± 0.0036742895043087548"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.EncodedNull_32K",
+            "value": 2.8173140262564025,
+            "unit": "ns",
+            "range": "± 0.002910056571858081"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_Small",
+            "value": 8.521835232774416,
+            "unit": "ns",
+            "range": "± 0.1114139343679333"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_4K",
+            "value": 8.486733878652254,
+            "unit": "ns",
+            "range": "± 0.13270281393063244"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.OverlongUtf8_32K",
+            "value": 7.367381980021794,
+            "unit": "ns",
+            "range": "± 0.2175507756469707"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_Small",
+            "value": 6.085084939996402,
+            "unit": "ns",
+            "range": "± 0.009742250764323201"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_4K",
+            "value": 38.81114423274994,
+            "unit": "ns",
+            "range": "± 0.5981018769573165"
+          },
+          {
+            "name": "Benchmarks.RequestSemanticsBenchmark.InvalidTE_32K",
+            "value": 294.58448600769043,
+            "unit": "ns",
+            "range": "± 1.1917772095974222"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.FlexibleParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Small_MultiSegment.Allocated",
+            "value": 112,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header4K_MultiSegment.Allocated",
+            "value": 4128,
+            "unit": "ns",
+            "range": "± 0"
+          },
+          {
+            "name": "Benchmarks.HardenedParserBenchmark.Header32K_MultiSegment.Allocated",
+            "value": 32808,
+            "unit": "ns",
+            "range": "± 0"
           }
         ]
       }
