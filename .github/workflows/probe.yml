@@ -26,7 +26,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0
+        dotnet-version: |
+          8.0
+          10.0
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -43,6 +45,7 @@ jobs:
       with:
         distribution: temurin
         java-version: '21'
+        cache: maven
 
     - name: Build .NET
       run: dotnet build src/Glyph11.sln -c Release
@@ -53,8 +56,19 @@ jobs:
     - name: Install Express
       run: npm install --prefix src/Servers/ExpressServer
 
-    - name: Build Spring Boot
-      run: mvn package -q -DskipTests -f src/Servers/SpringBootServer/pom.xml
+    - name: Install Nginx and Apache
+      run: sudo apt-get update && sudo apt-get install -y nginx apache2
+
+    - name: Download Caddy
+      run: |
+        curl -o caddy -fsSL "https://caddyserver.com/api/download?os=linux&arch=amd64"
+        chmod +x caddy
+
+    - name: Build Java servers
+      run: |
+        mvn package -q -DskipTests -f src/Servers/SpringBootServer/pom.xml
+        mvn package -q -DskipTests -f src/Servers/QuarkusServer/pom.xml
+        mvn package -q -DskipTests -f src/Servers/JettyServer/pom.xml
 
     # ── Start all servers ──────────────────────────────────────────────
 
@@ -83,6 +97,38 @@ jobs:
         java -jar src/Servers/SpringBootServer/target/*.jar --server.port=9004 --server.address=127.0.0.1 &
         echo $! > spring.pid
 
+    - name: Start Quarkus
+      run: |
+        java -Dquarkus.http.port=9005 -jar src/Servers/QuarkusServer/target/quarkus-app/quarkus-run.jar &
+        echo $! > quarkus.pid
+
+    - name: Start Nancy
+      run: |
+        dotnet run --no-build -c Release --project src/Servers/NancyServer -- 9006 &
+        echo $! > nancy.pid
+
+    - name: Start Jetty
+      run: |
+        java -jar src/Servers/JettyServer/target/jetty-server-1.0.0.jar 9007 &
+        echo $! > jetty.pid
+
+    - name: Start Nginx
+      run: |
+        nginx -c $GITHUB_WORKSPACE/src/Servers/NginxServer/nginx.conf &
+        echo $! > nginx.pid
+
+    - name: Start Apache
+      run: |
+        sudo sed -i 's/Listen 80/Listen 9009/' /etc/apache2/ports.conf
+        sudo sed -i 's/:80/:9009/' /etc/apache2/sites-enabled/000-default.conf
+        echo "OK" | sudo tee /var/www/html/index.html
+        sudo apache2ctl start
+
+    - name: Start Caddy
+      run: |
+        ./caddy run --config src/Servers/CaddyServer/Caddyfile --adapter caddyfile &
+        echo $! > caddy.pid
+
     - name: Wait for servers
       run: |
         wait_for() {
@@ -100,6 +146,12 @@ jobs:
         wait_for "Flask"        "http://localhost:9002/"
         wait_for "Express"      "http://localhost:9003/"
         wait_for "Spring Boot"  "http://localhost:9004/"
+        wait_for "Quarkus"      "http://localhost:9005/"
+        wait_for "Nancy"        "http://localhost:9006/"
+        wait_for "Jetty"        "http://localhost:9007/"
+        wait_for "Nginx"        "http://localhost:9008/"
+        wait_for "Apache"       "http://localhost:9009/"
+        wait_for "Caddy"        "http://localhost:9010/"
 
     - name: Verify servers
       run: |
@@ -111,6 +163,12 @@ jobs:
         curl -sf http://localhost:9002/ && echo " Flask OK"        || echo " Flask FAIL"
         curl -sf http://localhost:9003/ && echo " Express OK"      || echo " Express FAIL"
         curl -sf http://localhost:9004/ && echo " Spring Boot OK"  || echo " Spring Boot FAIL"
+        curl -sf http://localhost:9005/ && echo " Quarkus OK"      || echo " Quarkus FAIL"
+        curl -sf http://localhost:9006/ && echo " Nancy OK"        || echo " Nancy FAIL"
+        curl -sf http://localhost:9007/ && echo " Jetty OK"        || echo " Jetty FAIL"
+        curl -sf http://localhost:9008/ && echo " Nginx OK"        || echo " Nginx FAIL"
+        curl -sf http://localhost:9009/ && echo " Apache OK"       || echo " Apache FAIL"
+        curl -sf http://localhost:9010/ && echo " Caddy OK"        || echo " Caddy FAIL"
 
     # ── Run probe against each server ──────────────────────────────────
 
@@ -139,6 +197,36 @@ jobs:
         dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 9004 --output probe-spring.json || true
 
+    - name: Probe Quarkus
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9005 --output probe-quarkus.json || true
+
+    - name: Probe Nancy
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9006 --output probe-nancy.json || true
+
+    - name: Probe Jetty
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9007 --output probe-jetty.json || true
+
+    - name: Probe Nginx
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9008 --output probe-nginx.json || true
+
+    - name: Probe Apache
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9009 --output probe-apache.json || true
+
+    - name: Probe Caddy
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9010 --output probe-caddy.json || true
+
     # ── Stop all servers ───────────────────────────────────────────────
 
     - name: Stop servers
@@ -148,7 +236,13 @@ jobs:
         kill $(cat kestrel.pid) 2>/dev/null || true
         kill $(cat flask.pid)   2>/dev/null || true
         kill $(cat express.pid) 2>/dev/null || true
-        kill $(cat spring.pid)  2>/dev/null || true
+        kill $(cat spring.pid)   2>/dev/null || true
+        kill $(cat quarkus.pid) 2>/dev/null || true
+        kill $(cat nancy.pid)   2>/dev/null || true
+        kill $(cat jetty.pid)   2>/dev/null || true
+        kill $(cat nginx.pid)   2>/dev/null || true
+        sudo apache2ctl stop             2>/dev/null || true
+        kill $(cat caddy.pid)   2>/dev/null || true
 
     # ── Process results ────────────────────────────────────────────────
 
@@ -335,6 +429,12 @@ jobs:
             ('Flask',       'probe-flask.json'),
             ('Express',     'probe-express.json'),
             ('Spring Boot', 'probe-spring.json'),
+            ('Quarkus',     'probe-quarkus.json'),
+            ('Nancy',       'probe-nancy.json'),
+            ('Jetty',       'probe-jetty.json'),
+            ('Nginx',       'probe-nginx.json'),
+            ('Apache',      'probe-apache.json'),
+            ('Caddy',       'probe-caddy.json'),
         ]
 
         commit_id   = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
