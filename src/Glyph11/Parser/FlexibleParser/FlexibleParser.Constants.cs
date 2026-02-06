@@ -2,7 +2,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Glyph11.Parser.FlexParser;
+namespace Glyph11.Parser.FlexibleParser;
 
 /// <summary>
 /// A fast, minimal-validation HTTP/1.1 header parser.

@@ -4,7 +4,7 @@ using System.Text;
 using GenHTTP.Api.Draft.Protocol;
 
 using GenHTTP.Engine.Draft.Types;
-using Glyph11.Parser.FlexParser;
+using Glyph11.Parser.FlexibleParser;
 using Glyph11.Protocol;
 
 namespace Tests;

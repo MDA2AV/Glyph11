@@ -66,75 +66,48 @@ public static partial class HardenedParser
         return seq.ToArray();
     }
 
-    // ---- Token / field-value classification ----
-    //
-    // Bit 0 (0x01) = token        (RFC 9110 §5.6.2): !#$%&'*+-.^_`|~ DIGIT ALPHA
-    // Bit 1 (0x02) = field-value  (RFC 9110 §5.5):   HTAB SP VCHAR obs-text
-    //
-    // Control chars (0x00-0x08, 0x0A-0x1F, 0x7F) have both bits clear.
-    private const byte TkFlag = 0x01;
-    private const byte FvFlag = 0x02;
+    // ---- SIMD-accelerated character class validators (SearchValues<byte>) ----
 
-    private static ReadOnlySpan<byte> CharFlags =>
-    [
-        // 0x00-0x0F
-        0, 0, 0, 0, 0, 0, 0, 0, 0, FvFlag, 0, 0, 0, 0, 0, 0,
-        // 0x10-0x1F
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        // 0x20-0x2F:  SP ! " # $ % & ' ( ) * + , - . /
-        FvFlag, TkFlag | FvFlag, FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        FvFlag, FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, FvFlag,
-        // 0x30-0x3F:  0-9 : ; < = > ?
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        TkFlag | FvFlag, TkFlag | FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        // 0x40-0x4F:  @ A-O
-        FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        // 0x50-0x5F:  P-Z [ \ ] ^ _
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, FvFlag, FvFlag, FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        // 0x60-0x6F:  ` a-o
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        // 0x70-0x7F:  p-z { | } ~ DEL
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag,
-        TkFlag | FvFlag, TkFlag | FvFlag, TkFlag | FvFlag, FvFlag, TkFlag | FvFlag, FvFlag, TkFlag | FvFlag, 0,
-        // 0x80-0xFF: obs-text — allowed in field-value only
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-        FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag, FvFlag,
-    ];
+    // Token chars (RFC 9110 §5.6.2): !#$%&'*+-.^_`|~ DIGIT ALPHA
+    private static readonly SearchValues<byte> TokenSearchValues = SearchValues.Create(
+        "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"u8);
+
+    // Field-value chars (RFC 9110 §5.5): HTAB SP VCHAR obs-text
+    private static readonly SearchValues<byte> FieldValueSearchValues = SearchValues.Create(
+        BuildFieldValueBytes());
+
+    // Request-target: reject control chars (0x00-0x1F, 0x7F)
+    private static readonly SearchValues<byte> RequestTargetSearchValues = SearchValues.Create(
+        BuildRequestTargetBytes());
+
+    private static byte[] BuildFieldValueBytes()
+    {
+        var bytes = new byte[1 + (0x7E - 0x20 + 1) + (0xFF - 0x80 + 1)];
+        int i = 0;
+        bytes[i++] = 0x09; // HTAB
+        for (int b = 0x20; b <= 0x7E; b++) bytes[i++] = (byte)b; // SP + VCHAR
+        for (int b = 0x80; b <= 0xFF; b++) bytes[i++] = (byte)b; // obs-text
+        return bytes;
+    }
+
+    private static byte[] BuildRequestTargetBytes()
+    {
+        var bytes = new byte[(0x7E - 0x20 + 1) + (0xFF - 0x80 + 1)];
+        int i = 0;
+        for (int b = 0x20; b <= 0x7E; b++) bytes[i++] = (byte)b;
+        for (int b = 0x80; b <= 0xFF; b++) bytes[i++] = (byte)b;
+        return bytes;
+    }
 
     // ---- Validation helpers (Span) ----
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsValidToken(ReadOnlySpan<byte> span)
-    {
-        var flags = CharFlags;
-        for (int i = 0; i < span.Length; i++)
-        {
-            if ((flags[span[i]] & TkFlag) == 0)
-                return false;
-        }
-        return true;
-    }
+        => span.IndexOfAnyExcept(TokenSearchValues) < 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsValidFieldValue(ReadOnlySpan<byte> span)
-    {
-        var flags = CharFlags;
-        for (int i = 0; i < span.Length; i++)
-        {
-            if ((flags[span[i]] & FvFlag) == 0)
-                return false;
-        }
-        return true;
-    }
+        => span.IndexOfAnyExcept(FieldValueSearchValues) < 0;
 
     /// <summary>
     /// HTTP-version = "HTTP/" DIGIT "." DIGIT  (RFC 9112 §2.6)
@@ -156,6 +129,14 @@ public static partial class HardenedParser
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsDigit(byte b) => (uint)(b - '0') <= 9;
+
+    /// <summary>
+    /// Validates that a request-target contains no control characters (0x00-0x1F, 0x7F).
+    /// RFC 9112 §3.2 — request-target must only contain VCHAR and unreserved/reserved URI chars.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsValidRequestTarget(ReadOnlySpan<byte> span)
+        => span.IndexOfAnyExcept(RequestTargetSearchValues) < 0;
 
     // ---- Validation helpers (ReadOnlySequence) ----
 

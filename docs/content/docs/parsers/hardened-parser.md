@@ -47,6 +47,12 @@ The HardenedParser enforces the following on every request:
 - HTTP version must match the format `HTTP/X.Y` (exactly 8 bytes, digits at positions 5 and 7)
 - Query parameter count must not exceed `MaxQueryParameterCount`
 
+### Line Endings
+
+- Bare LF (0x0A without preceding 0x0D) is rejected — RFC 9112 Section 2.2
+- Obsolete line folding (header lines starting with SP or HTAB) is rejected — RFC 9112 Section 5.2
+- Whitespace between header name and colon is rejected — RFC 9112 Section 5.1
+
 ### Headers
 
 - Header name must contain only valid token characters
@@ -60,6 +66,12 @@ The HardenedParser enforces the following on every request:
 ### HTTP Version Caching
 
 Common versions (`HTTP/1.1`, `HTTP/1.0`) are cached as static byte arrays to avoid per-request allocation.
+
+## Performance
+
+Validation uses SIMD-accelerated `SearchValues<byte>` with `IndexOfAnyExcept` for token and field-value character checks, and vectorized `IndexOf` for bare-LF detection. This keeps the overhead to ~1.4-1.6x over the unvalidated `FlexibleParser`.
+
+See [Performance](../performance) for detailed benchmarks.
 
 ## Multi-Segment Handling
 

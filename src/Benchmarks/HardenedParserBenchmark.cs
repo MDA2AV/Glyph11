@@ -6,6 +6,8 @@ using Glyph11.Parser.Hardened;
 
 namespace Benchmarks;
 
+// todo 32KB HEADERS
+
 [MemoryDiagnoser]
 public class HardenedParserBenchmark
 {
@@ -118,14 +120,14 @@ public class HardenedParserBenchmark
 
     // ---- 16KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header16K_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _rom16K, _into.Source, in Limits, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header16K_MultiSegment()
     {
         _into.Reset();
@@ -134,14 +136,14 @@ public class HardenedParserBenchmark
 
     // ---- 32KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header32K_ROM()
     {
         _into.Reset();
         HardenedParser.TryExtractFullHeaderROM(ref _rom32K, _into.Source, in Limits, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header32K_MultiSegment()
     {
         _into.Reset();

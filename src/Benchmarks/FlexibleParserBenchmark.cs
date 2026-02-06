@@ -7,7 +7,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
 using GenHTTP.Engine.Draft.Types;
-using Glyph11.Parser.FlexParser;
+using Glyph11.Parser.FlexibleParser;
 
 namespace Benchmarks;
 
@@ -143,14 +143,14 @@ public class FlexibleParserBenchmark
 
     // ---- 16KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header16K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom16K, _into.Source, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header16K_MultiSegment()
     {
         _into.Reset();
@@ -159,14 +159,14 @@ public class FlexibleParserBenchmark
 
     // ---- 32KB ----
 
-    [Benchmark]
+    //[Benchmark]
     public void Header32K_ROM()
     {
         _into.Reset();
         FlexibleParser.TryExtractFullHeaderReadOnlyMemory(ref _rom32K, _into.Source, out _);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void Header32K_MultiSegment()
     {
         _into.Reset();

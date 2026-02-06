@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Text;
-using Glyph11.Parser.FlexParser;
+using Glyph11.Parser.FlexibleParser;
 using Glyph11.Protocol;
 using Glyph11.Utils;
 
