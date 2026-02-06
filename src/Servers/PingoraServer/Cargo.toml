@@ -7,3 +7,5 @@ edition = "2021"
 pingora = { version = "0.4", features = ["proxy"] }
 async-trait = "0.1"
 bytes = "1"
+# Pin sfv to 0.9 — pingora-core 0.4 declares sfv = "0" but uses the 0.9 API
+sfv = "0.9"
