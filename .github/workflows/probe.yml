@@ -47,6 +47,9 @@ jobs:
         java-version: '21'
         cache: maven
 
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+
     - name: Build .NET
       run: dotnet build src/Glyph11.sln -c Release
 
@@ -56,8 +59,8 @@ jobs:
     - name: Install Express
       run: npm install --prefix src/Servers/ExpressServer
 
-    - name: Install Nginx and Apache
-      run: sudo apt-get update && sudo apt-get install -y nginx apache2
+    - name: Install Nginx, Apache, and system dependencies
+      run: sudo apt-get update && sudo apt-get install -y nginx apache2 pkg-config libssl-dev
 
     - name: Download Caddy
       run: |
@@ -69,6 +72,9 @@ jobs:
         mvn package -q -DskipTests -f src/Servers/SpringBootServer/pom.xml
         mvn package -q -DskipTests -f src/Servers/QuarkusServer/pom.xml
         mvn package -q -DskipTests -f src/Servers/JettyServer/pom.xml
+
+    - name: Build Pingora
+      run: cargo build --release --manifest-path src/Servers/PingoraServer/Cargo.toml
 
     # ── Start all servers ──────────────────────────────────────────────
 
@@ -129,6 +135,11 @@ jobs:
         ./caddy run --config src/Servers/CaddyServer/Caddyfile --adapter caddyfile &
         echo $! > caddy.pid
 
+    - name: Start Pingora
+      run: |
+        src/Servers/PingoraServer/target/release/pingora-server 9011 &
+        echo $! > pingora.pid
+
     - name: Wait for servers
       run: |
         wait_for() {
@@ -152,6 +163,7 @@ jobs:
         wait_for "Nginx"        "http://localhost:9008/"
         wait_for "Apache"       "http://localhost:9009/"
         wait_for "Caddy"        "http://localhost:9010/"
+        wait_for "Pingora"      "http://localhost:9011/"
 
     - name: Verify servers
       run: |
@@ -169,6 +181,7 @@ jobs:
         curl -sf http://localhost:9008/ && echo " Nginx OK"        || echo " Nginx FAIL"
         curl -sf http://localhost:9009/ && echo " Apache OK"       || echo " Apache FAIL"
         curl -sf http://localhost:9010/ && echo " Caddy OK"        || echo " Caddy FAIL"
+        curl -sf http://localhost:9011/ && echo " Pingora OK"      || echo " Pingora FAIL"
 
     # ── Run probe against each server ──────────────────────────────────
 
@@ -227,6 +240,11 @@ jobs:
         dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
           --host localhost --port 9010 --output probe-caddy.json || true
 
+    - name: Probe Pingora
+      run: |
+        dotnet run --no-build -c Release --project src/Glyph11.Probe.Cli -- \
+          --host localhost --port 9011 --output probe-pingora.json || true
+
     # ── Stop all servers ───────────────────────────────────────────────
 
     - name: Stop servers
@@ -243,6 +261,7 @@ jobs:
         kill $(cat nginx.pid)   2>/dev/null || true
         sudo apache2ctl stop             2>/dev/null || true
         kill $(cat caddy.pid)   2>/dev/null || true
+        kill $(cat pingora.pid) 2>/dev/null || true
 
     # ── Process results ────────────────────────────────────────────────
 
@@ -402,8 +421,8 @@ jobs:
                 conn   = r.get('connectionState', '')
                 passed = (
                     (status is not None and status in spec['accept']) or
-                    (spec['close_ok'] and conn == 'ClosedByServer') or
-                    (spec['timeout_ok'] and conn == 'TimedOut')
+                    (status is None and spec['close_ok'] and conn == 'ClosedByServer') or
+                    (status is None and spec['timeout_ok'] and conn == 'TimedOut')
                 )
                 got     = str(status) if status is not None else conn
                 verdict = 'Pass' if passed else 'Fail'
@@ -435,6 +454,7 @@ jobs:
             ('Nginx',       'probe-nginx.json'),
             ('Apache',      'probe-apache.json'),
             ('Caddy',       'probe-caddy.json'),
+            ('Pingora',     'probe-pingora.json'),
         ]
 
         commit_id   = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
@@ -483,7 +503,10 @@ jobs:
             lookup[sv['name']] = {r['id']: r for r in sv['results']}
 
         names = [sv['name'] for sv in server_data]
-        hdr_cols = ' | '.join(f'**{n}**' for n in names)
+
+        import re
+        def short(tid):
+            return re.sub(r'^(RFC\d+-[\d.]+-|COMP-|SMUG-|MAL-)', '', tid)
 
         for cat_name, title in [('Compliance', 'Compliance'), ('Smuggling', 'Smuggling'), ('MalformedInput', 'Malformed Input')]:
             cat_tests = [tid for tid in test_ids if lookup[names[0]][tid]['category'] == cat_name]
@@ -491,23 +514,28 @@ jobs:
                 continue
             lines.append(f'### {title}')
             lines.append('')
-            lines.append(f'| Test | Expected | {hdr_cols} | Reason |')
-            sep = '|------|----------' + ''.join('|:---:' for _ in names) + '|--------|'
+            # Header row: Server | test1 | test2 | ...
+            hdr = '| Server | ' + ' | '.join(f'`{short(tid)}`' for tid in cat_tests) + ' |'
+            sep = '|---' + ''.join('|:---:' for _ in cat_tests) + '|'
+            lines.append(hdr)
             lines.append(sep)
+            # Expected row
+            exp_cells = []
             for tid in cat_tests:
                 first = lookup[names[0]][tid]
-                expected = first['expected']
-                reason = STRICT.get(tid, {}).get('reason', '')
+                exp_cells.append(first['expected'])
+            lines.append('| **Expected** | ' + ' | '.join(exp_cells) + ' |')
+            # Server rows
+            for n in names:
                 cells = []
-                for n in names:
+                for tid in cat_tests:
                     r = lookup[n].get(tid)
                     if not r:
                         cells.append('—')
                     else:
                         icon = '✅' if r['verdict'] == 'Pass' else '❌'
-                        cells.append(f"{icon} {r['got']}")
-                row_cells = ' | '.join(cells)
-                lines.append(f"| `{tid}` | {expected} | {row_cells} | {reason} |")
+                        cells.append(f"{icon}`{r['got']}`")
+                lines.append(f"| **{n}** | " + ' | '.join(cells) + ' |')
             lines.append('')
 
         lines.append(f"<sub>Commit: {commit_id[:7]}</sub>")

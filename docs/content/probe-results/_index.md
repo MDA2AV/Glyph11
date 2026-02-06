@@ -11,7 +11,7 @@ HTTP/1.1 compliance comparison across frameworks. Each test sends a specific mal
 <div id="probe-summary"><p><em>Loading probe data...</em></p></div>
 
 {{< callout type="info" >}}
-These results are from CI runs (`ubuntu-latest`). Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **Flask** (Python), **Express** (Node.js), **Spring Boot** (Java), **Quarkus** (Java), **Nancy** (.NET), **Jetty** (Java), **Nginx** (native), **Apache** (native), **Caddy** (native).
+These results are from CI runs (`ubuntu-latest`). Servers tested: **Glyph11** (raw TCP + HardenedParser), **Kestrel** (ASP.NET Core), **Flask** (Python), **Express** (Node.js), **Spring Boot** (Java), **Quarkus** (Java), **Nancy** (.NET), **Jetty** (Java), **Nginx** (native), **Apache** (native), **Caddy** (native), **Pingora** (Rust).
 {{< /callout >}}
 
 ## Compliance
@@ -50,20 +50,19 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
   }
 
   // ── Summary badges ────────────────────────────────────────────────
-  var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">';
+  var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">';
   servers.forEach(function (sv) {
     var s = sv.summary;
     var pct = Math.round((s.passed / s.total) * 100);
-    var color = pct === 100 ? '#178600' : pct >= 80 ? '#b08800' : '#d73a49';
-    html += '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px 20px;text-align:center;">';
-    html += '<div style="font-weight:bold;font-size:1.1em;">' + sv.name + '</div>';
-    html += '<div style="font-size:1.8em;font-weight:bold;color:' + color + ';">' + s.passed + '/' + s.total + '</div>';
-    html += '<div style="font-size:0.85em;color:#666;">' + pct + '% compliant</div>';
+    var bg = pct === 100 ? '#1a7f37' : pct >= 80 ? '#9a6700' : '#cf222e';
+    html += '<div style="background:' + bg + ';color:#fff;border-radius:6px;padding:6px 12px;text-align:center;line-height:1.3;">';
+    html += '<div style="font-weight:700;font-size:12px;">' + sv.name + '</div>';
+    html += '<div style="font-size:16px;font-weight:800;">' + s.passed + '/' + s.total + '</div>';
     html += '</div>';
   });
   html += '</div>';
   if (data.commit) {
-    html += '<p style="margin-top:8px;font-size:0.85em;color:#666;">Commit: <code>' + data.commit.id.substring(0, 7) + '</code> &mdash; ' + (data.commit.message || '') + '</p>';
+    html += '<p style="margin-top:8px;font-size:0.85em;color:#656d76;">Commit: <code>' + data.commit.id.substring(0, 7) + '</code> &mdash; ' + (data.commit.message || '') + '</p>';
   }
   summary.innerHTML = html;
 
@@ -79,7 +78,18 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
   // Test IDs from first server (canonical order)
   var testIds = servers[0].results.map(function (r) { return r.id; });
 
-  // ── Render comparison table ───────────────────────────────────────
+  // ── Render transposed table (servers = rows, tests = columns) ────
+  var PASS_BG = '#1a7f37';
+  var FAIL_BG = '#cf222e';
+  var SKIP_BG = '#656d76';
+  var EXPECT_BG = '#444c56';
+  var cellCss = 'text-align:center;padding:2px 3px;font-size:11px;font-weight:600;color:#fff;';
+  var pillCss = cellCss + 'border-radius:3px;min-width:28px;display:inline-block;line-height:18px;';
+
+  function pill(bg, label) {
+    return '<span style="' + pillCss + 'background:' + bg + ';">' + label + '</span>';
+  }
+
   function renderTable(targetId, categoryKey) {
     var el = document.getElementById(targetId);
     var catTests = testIds.filter(function (tid) {
@@ -90,57 +100,50 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
       return;
     }
 
-    var t = '<table style="width:100%;font-size:0.9em;border-collapse:collapse;">';
-
-    // Header
-    t += '<thead><tr>';
-    t += '<th style="text-align:left;padding:8px 6px;">Test</th>';
-    t += '<th style="text-align:center;padding:8px 6px;">Expected</th>';
-    names.forEach(function (n) {
-      t += '<th style="text-align:center;padding:8px 6px;min-width:90px;">' + n + '</th>';
+    // Short labels: strip common prefixes for column headers
+    var shortLabels = catTests.map(function (tid) {
+      return tid.replace(/^(RFC\d+-[\d.]+-|COMP-|SMUG-|MAL-)/, '');
     });
-    t += '<th style="text-align:left;padding:8px 6px;">Reason</th>';
+
+    var t = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:12px;white-space:nowrap;">';
+
+    // ── Column header row (test IDs, rotated) ──
+    t += '<thead><tr>';
+    t += '<th style="padding:4px 8px;text-align:left;vertical-align:bottom;min-width:100px;"></th>';
+    catTests.forEach(function (tid, i) {
+      var first = lookup[names[0]][tid];
+      t += '<th style="padding:2px 3px;vertical-align:bottom;text-align:center;" title="' + first.description + '">';
+      t += '<span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:500;letter-spacing:-0.3px;">' + shortLabels[i] + '</span>';
+      t += '</th>';
+    });
     t += '</tr></thead><tbody>';
 
+    // ── Expected row ──
+    t += '<tr style="background:#f6f8fa;">';
+    t += '<td style="padding:4px 8px;font-weight:700;font-size:11px;color:#656d76;">Expected</td>';
     catTests.forEach(function (tid) {
       var first = lookup[names[0]][tid];
-      var allPass = names.every(function (n) {
-        var r = lookup[n][tid];
-        return r && r.verdict === 'Pass';
-      });
+      t += '<td style="text-align:center;padding:2px 3px;">' + pill(EXPECT_BG, first.expected.replace(/ or close/g, '/\u2715').replace(/\//g, '/\u200B')) + '</td>';
+    });
+    t += '</tr>';
 
+    // ── Server rows ──
+    names.forEach(function (n) {
       t += '<tr>';
-
-      // Test ID + description
-      t += '<td style="padding:6px;vertical-align:top;">';
-      t += '<code style="font-size:0.9em;">' + tid + '</code>';
-      t += '<br><span style="font-size:0.8em;color:#666;">' + first.description + '</span>';
-      t += '</td>';
-
-      // Expected
-      t += '<td style="text-align:center;padding:6px;vertical-align:top;"><code>' + first.expected + '</code></td>';
-
-      // Per-server verdict
-      names.forEach(function (n) {
-        var r = lookup[n][tid];
+      t += '<td style="padding:4px 8px;font-weight:600;font-size:12px;">' + n + '</td>';
+      catTests.forEach(function (tid) {
+        var r = lookup[n] && lookup[n][tid];
         if (!r) {
-          t += '<td style="text-align:center;padding:6px;">\u2014</td>';
+          t += '<td style="text-align:center;padding:2px 3px;">' + pill(SKIP_BG, '\u2014') + '</td>';
           return;
         }
-        var icon = r.verdict === 'Pass' ? '\u2705' : '\u274c';
-        var bg = r.verdict === 'Pass' ? '' : 'background:#fff5f5;';
-        t += '<td style="text-align:center;padding:6px;' + bg + '">';
-        t += icon + ' <code>' + r.got + '</code>';
-        t += '</td>';
+        var bg = r.verdict === 'Pass' ? PASS_BG : FAIL_BG;
+        t += '<td style="text-align:center;padding:2px 3px;">' + pill(bg, r.got) + '</td>';
       });
-
-      // Reason (from strict spec, not per-server)
-      t += '<td style="padding:6px;font-size:0.85em;vertical-align:top;">' + first.reason + '</td>';
-
       t += '</tr>';
     });
 
-    t += '</tbody></table>';
+    t += '</tbody></table></div>';
     el.innerHTML = t;
   }
 
