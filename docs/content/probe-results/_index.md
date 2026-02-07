@@ -32,8 +32,6 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
 
 <div id="table-malformed"></div>
 
-## Glossary
-
 <div id="glossary"></div>
 
 <script src="/Glyph11/probe/data.js"></script>
@@ -199,7 +197,8 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
         + '</div>';
     }
 
-    var g = '<details style="margin-bottom:2rem;">';
+    var g = '<h2>Glossary</h2>';
+    g += '<details style="margin-bottom:2rem;">';
     g += '<summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;user-select:none;">Show all ' + allTests.length + ' test definitions</summary>';
     g += '<div style="margin-top:8px;">';
     scoredIds.forEach(function (tid) { g += glossaryRow(tid); });
