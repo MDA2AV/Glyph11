@@ -188,7 +188,7 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
     var scoredIds = allTests.filter(function (tid) { return lookup[names[0]][tid].scored !== false; });
     var unscoredIds = allTests.filter(function (tid) { return lookup[names[0]][tid].scored === false; });
 
-    var g = '<div style="max-height:500px;overflow-y:auto;border:1px solid #d0d7de;border-radius:6px;">';
+    var g = '<div style="max-height:min(400px, 50vh);overflow-y:auto;border:1px solid #d0d7de;border-radius:6px;margin-bottom:2rem;">';
     g += '<table style="border-collapse:collapse;font-size:13px;width:100%;">';
     g += '<thead style="position:sticky;top:0;background:#fff;z-index:1;"><tr>';
     g += '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid #d0d7de;width:260px;">Test ID</th>';
