@@ -63,7 +63,8 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
     var s = sv.summary;
     var scored = s.scored || s.total;
     var pct = Math.round((s.passed / scored) * 100);
-    var bg = pct === 100 ? '#1a7f37' : pct >= 80 ? '#9a6700' : '#cf222e';
+    // 85-100% green, 60-84% yellow, 20-59% red, 0-19% dark red
+    var bg = pct >= 85 ? '#1a7f37' : pct >= 60 ? '#9a6700' : pct >= 20 ? '#cf222e' : '#82071e';
     html += '<div style="background:' + bg + ';color:#fff;border-radius:6px;padding:6px 12px;text-align:center;line-height:1.3;">';
     html += '<div style="font-weight:700;font-size:12px;">' + sv.name + '</div>';
     html += '<div style="font-size:16px;font-weight:800;">' + s.passed + '/' + scored + '</div>';
