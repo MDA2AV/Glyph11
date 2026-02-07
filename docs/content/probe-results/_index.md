@@ -51,9 +51,15 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
     return;
   }
 
-  // ── Summary badges ────────────────────────────────────────────────
+  // ── Summary badges (best → worst) ───────────────────────────────
+  var sorted = servers.slice().sort(function (a, b) {
+    var sa = a.summary, sb = b.summary;
+    var pa = sa.passed / (sa.scored || sa.total || 1);
+    var pb = sb.passed / (sb.scored || sb.total || 1);
+    return pb - pa || a.name.localeCompare(b.name);
+  });
   var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">';
-  servers.forEach(function (sv) {
+  sorted.forEach(function (sv) {
     var s = sv.summary;
     var scored = s.scored || s.total;
     var pct = Math.round((s.passed / scored) * 100);
@@ -70,7 +76,7 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
   summary.innerHTML = html;
 
   // ── Build lookups ─────────────────────────────────────────────────
-  var names = servers.map(function (sv) { return sv.name; });
+  var names = servers.map(function (sv) { return sv.name; }).sort();
   var lookup = {};
   servers.forEach(function (sv) {
     var m = {};
