@@ -188,34 +188,26 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
     var scoredIds = allTests.filter(function (tid) { return lookup[names[0]][tid].scored !== false; });
     var unscoredIds = allTests.filter(function (tid) { return lookup[names[0]][tid].scored === false; });
 
-    var g = '<div style="max-height:min(400px, 50vh);overflow-y:auto;border:1px solid #d0d7de;border-radius:6px;margin-bottom:2rem;">';
-    g += '<table style="border-collapse:collapse;font-size:13px;width:100%;">';
-    g += '<thead style="position:sticky;top:0;background:#fff;z-index:1;"><tr>';
-    g += '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid #d0d7de;width:260px;">Test ID</th>';
-    g += '<th style="text-align:center;padding:6px 8px;border-bottom:2px solid #d0d7de;width:100px;">Expected</th>';
-    g += '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid #d0d7de;">Description</th>';
-    g += '</tr></thead><tbody>';
-
     function glossaryRow(tid) {
       var r = lookup[names[0]][tid];
       if (!r) return '';
       var rfc = r.rfc ? ' <span style="color:#656d76;font-size:11px;">(' + r.rfc + ')</span>' : '';
-      var row = '<tr id="test-' + tid + '" style="border-bottom:1px solid #f0f0f0;">';
-      row += '<td style="padding:5px 8px;"><code style="font-size:12px;">' + tid + '</code>' + rfc + '</td>';
-      row += '<td style="text-align:center;padding:5px 8px;">' + pill(EXPECT_BG, r.expected) + '</td>';
-      row += '<td style="padding:5px 8px;">' + r.reason + '</td>';
-      row += '</tr>';
-      return row;
+      return '<div id="test-' + tid + '" style="display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid #f0f0f0;">'
+        + '<div style="min-width:240px;"><code style="font-size:12px;">' + tid + '</code>' + rfc + '</div>'
+        + '<div style="min-width:60px;text-align:center;">' + pill(EXPECT_BG, r.expected) + '</div>'
+        + '<div style="flex:1;font-size:13px;">' + r.reason + '</div>'
+        + '</div>';
     }
 
+    var g = '<details style="margin-bottom:2rem;">';
+    g += '<summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;user-select:none;">Show all ' + allTests.length + ' test definitions</summary>';
+    g += '<div style="margin-top:8px;">';
     scoredIds.forEach(function (tid) { g += glossaryRow(tid); });
-
     if (unscoredIds.length > 0) {
-      g += '<tr><td colspan="3" style="padding:8px;font-weight:700;font-size:12px;color:#656d76;background:#f6f8fa;border-bottom:1px solid #d0d7de;">Not scored (RFC-compliant behavior)</td></tr>';
+      g += '<div style="padding:8px 0;font-weight:700;font-size:12px;color:#656d76;border-bottom:1px solid #d0d7de;margin-top:4px;">Not scored (RFC-compliant behavior)</div>';
       unscoredIds.forEach(function (tid) { g += glossaryRow(tid); });
     }
-
-    g += '</tbody></table></div>';
+    g += '</div></details>';
     glossaryEl.innerHTML = g;
   }
 })();
