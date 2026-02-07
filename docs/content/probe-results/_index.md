@@ -132,17 +132,18 @@ Robustness tests for garbage, oversized, and invalid payloads. These tests verif
 
     var t = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:12px;white-space:nowrap;">';
 
-    // ── Column header row ──
+    // ── Column header row (diagonal labels) ──
     t += '<thead><tr>';
     t += '<th style="padding:4px 8px;text-align:left;vertical-align:bottom;min-width:100px;"></th>';
     orderedTests.forEach(function (tid, i) {
       var first = lookup[names[0]][tid];
       var isUnscored = first.scored === false;
       var opacity = isUnscored ? 'opacity:0.55;' : '';
-      t += '<th style="padding:3px 4px;text-align:center;vertical-align:bottom;' + opacity + '">';
-      t += '<a href="#test-' + tid + '" style="font-size:10px;font-weight:500;color:inherit;text-decoration:none;" title="' + first.description + '">' + shortLabels[i];
+      t += '<th style="padding:0;height:110px;width:30px;vertical-align:bottom;' + opacity + '">';
+      t += '<div style="width:30px;height:110px;position:relative;">';
+      t += '<a href="#test-' + tid + '" style="font-size:10px;font-weight:500;color:inherit;text-decoration:none;position:absolute;bottom:6px;left:50%;transform-origin:bottom left;transform:rotate(-55deg);white-space:nowrap;" title="' + first.description + '">' + shortLabels[i];
       if (isUnscored) t += '*';
-      t += '</a></th>';
+      t += '</a></div></th>';
     });
     t += '</tr></thead><tbody>';
 
