@@ -440,4 +440,82 @@ public partial class HardenedParserTests
         Parse("GET / HTTP/1.1\r\nHost: x\r\n\r\n", multi);
         Assert.False(RequestSemantics.HasInvalidTransferEncoding(_request));
     }
+
+    // ---- HasInvalidHostFormat ----
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HostWithUserinfo_Detected(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: user@example.com\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidHostFormat(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_HostWithPath_Detected(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: example.com/path\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidHostFormat(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ValidHost_NotFlagged(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: example.com:8080\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidHostFormat(_request));
+    }
+
+    // ---- HasAsteriskFormWithoutOptions ----
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_AsteriskWithGet_Detected(bool multi)
+    {
+        Parse("GET * HTTP/1.1\r\nHost: x\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasAsteriskFormWithoutOptions(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_AsteriskWithOptions_NotFlagged(bool multi)
+    {
+        Parse("OPTIONS * HTTP/1.1\r\nHost: x\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasAsteriskFormWithoutOptions(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_NormalPathWithGet_NotAsterisk(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: x\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasAsteriskFormWithoutOptions(_request));
+    }
+
+    // ---- HasInvalidConnectRequest ----
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_ConnectMethod_Detected(bool multi)
+    {
+        Parse("CONNECT host:443 HTTP/1.1\r\nHost: host:443\r\n\r\n", multi);
+        Assert.True(RequestSemantics.HasInvalidConnectRequest(_request));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Semantics_GetMethod_NotConnect(bool multi)
+    {
+        Parse("GET / HTTP/1.1\r\nHost: x\r\n\r\n", multi);
+        Assert.False(RequestSemantics.HasInvalidConnectRequest(_request));
+    }
 }

@@ -6,11 +6,15 @@ namespace Glyph11;
 public class HttpParseException : Exception
 {
     /// <param name="message">A description of the protocol violation.</param>
-    public HttpParseException(string message, bool isLimitViolation = false) : base(message)
+    /// <param name="statusCode">HTTP status code to return (default 400).</param>
+    public HttpParseException(string message, int statusCode = 400) : base(message)
     {
-        IsLimitViolation = isLimitViolation;
+        StatusCode = statusCode;
     }
 
+    /// <summary>The HTTP status code to return (400 for structural errors, 431 for limit breaches).</summary>
+    public int StatusCode { get; }
+
     /// <summary>True when the error is a size/count limit breach (→ 431), false for structural errors (→ 400).</summary>
-    public bool IsLimitViolation { get; }
+    public bool IsLimitViolation => StatusCode != 400;
 }

@@ -380,6 +380,52 @@ public static class RequestSemantics
         return false;
     }
 
+    private static ReadOnlySpan<byte> OptionsMethod => "options"u8;
+    private static ReadOnlySpan<byte> ConnectMethod => "connect"u8;
+    private static ReadOnlySpan<byte> Asterisk => "*"u8;
+
+    /// <summary>
+    /// Returns true if the Host header value contains userinfo (@) or path (/) components.
+    /// (RFC 9110 §7.2 — Host must be host:port only)
+    /// </summary>
+    public static bool HasInvalidHostFormat(BinaryRequest request)
+    {
+        var headers = request.Headers;
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            if (!AsciiEqualsIgnoreCase(headers[i].Key.Span, HostName))
+                continue;
+
+            var value = headers[i].Value.Span;
+            if (value.IndexOf((byte)'@') >= 0 || value.IndexOf((byte)'/') >= 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the request-target is asterisk-form (*) but the method is not OPTIONS.
+    /// (RFC 9112 §3.2.4 — asterisk-form is only valid for OPTIONS)
+    /// </summary>
+    public static bool HasAsteriskFormWithoutOptions(BinaryRequest request)
+    {
+        if (!request.Path.Span.SequenceEqual(Asterisk))
+            return false;
+
+        return !AsciiEqualsIgnoreCase(request.Method.Span, OptionsMethod);
+    }
+
+    /// <summary>
+    /// Returns true if the request method is CONNECT.
+    /// Origin servers should reject CONNECT requests (RFC 9110 §9.3.6 — CONNECT is for proxies).
+    /// </summary>
+    public static bool HasInvalidConnectRequest(BinaryRequest request)
+    {
+        return AsciiEqualsIgnoreCase(request.Method.Span, ConnectMethod);
+    }
+
     /// <summary>
     /// Returns true if a Transfer-Encoding header value is present but does not
     /// equal "chunked" (after trimming OWS and case-insensitive comparison).

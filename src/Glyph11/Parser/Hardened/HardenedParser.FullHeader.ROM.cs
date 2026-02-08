@@ -22,7 +22,7 @@ public static partial class HardenedParser
 
         int totalHeaderBytes = headerEnd + 4;
         if (totalHeaderBytes > limits.MaxTotalHeaderBytes)
-            throw new HttpParseException("Total header size exceeds limit.", isLimitViolation: true);
+            throw new HttpParseException("Total header size exceeds limit.", statusCode: 431);
 
         // ---- Request line: METHOD SP URL SP VERSION CRLF ----
 
@@ -56,7 +56,7 @@ public static partial class HardenedParser
         // --- Method ---
         var methodSpan = requestLine[..firstSpace];
         if (methodSpan.Length == 0 || methodSpan.Length > limits.MaxMethodLength)
-            throw new HttpParseException("Method length exceeds limit.", isLimitViolation: true);
+            throw new HttpParseException("Method length exceeds limit.");
         if (!IsValidToken(methodSpan))
             throw new HttpParseException("Method contains invalid token characters.");
 
@@ -66,7 +66,7 @@ public static partial class HardenedParser
         int urlStart = firstSpace + 1;
         int urlLen = secondSpace - urlStart;
         if (urlLen > limits.MaxUrlLength)
-            throw new HttpParseException("URL length exceeds limit.", isLimitViolation: true);
+            throw new HttpParseException("URL length exceeds limit.", statusCode: 431);
 
         var urlSpan = requestLine.Slice(urlStart, urlLen);
 
@@ -106,7 +106,7 @@ public static partial class HardenedParser
                 if (eq > 0)
                 {
                     if (++paramCount > limits.MaxQueryParameterCount)
-                        throw new HttpParseException("Query parameter count exceeds limit.", isLimitViolation: true);
+                        throw new HttpParseException("Query parameter count exceeds limit.", statusCode: 431);
 
                     request.QueryParameters.Add(
                         input.Slice(pairAbsStart, eq),
@@ -159,7 +159,7 @@ public static partial class HardenedParser
             // Validate header name
             var nameSpan = line[..colon];
             if (nameSpan.Length > limits.MaxHeaderNameLength)
-                throw new HttpParseException("Header name length exceeds limit.", isLimitViolation: true);
+                throw new HttpParseException("Header name length exceeds limit.", statusCode: 431);
             if (!IsValidToken(nameSpan))
                 throw new HttpParseException("Header name contains invalid token characters.");
 
@@ -177,12 +177,12 @@ public static partial class HardenedParser
             // Validate header value
             var valueSpan = span.Slice(valAbsStart, valLen);
             if (valLen > limits.MaxHeaderValueLength)
-                throw new HttpParseException("Header value length exceeds limit.", isLimitViolation: true);
+                throw new HttpParseException("Header value length exceeds limit.", statusCode: 431);
             if (!IsValidFieldValue(valueSpan))
                 throw new HttpParseException("Header value contains invalid characters.");
 
             if (++headerCount > limits.MaxHeaderCount)
-                throw new HttpParseException("Header count exceeds limit.", isLimitViolation: true);
+                throw new HttpParseException("Header count exceeds limit.", statusCode: 431);
 
             request.Headers.Add(
                 input.Slice(lineStart, colon),
