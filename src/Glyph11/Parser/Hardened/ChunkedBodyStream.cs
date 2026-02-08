@@ -142,6 +142,9 @@ public struct ChunkedBodyStream
 
                     if (input[pos] == (byte)'\r')
                     {
+                        if (_extensionBytes == 0)
+                            throw new HttpParseException("Bare semicolon with no chunk extension name.");
+
                         _phase = Phase.HeaderCrlf;
                         pos++;
                         continue;

@@ -168,7 +168,7 @@ public partial class HardenedParserTests
         Assert.Equal(8192, d.MaxUrlLength);
         Assert.Equal(128, d.MaxQueryParameterCount);
         Assert.Equal(16, d.MaxMethodLength);
-        Assert.Equal(32768, d.MaxTotalHeaderBytes);
+        Assert.Equal(1_048_576, d.MaxTotalHeaderBytes);
     }
 
     [Fact]
